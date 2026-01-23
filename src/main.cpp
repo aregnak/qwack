@@ -1,10 +1,10 @@
 #include <windows.h>
 #include <d3d11.h>
 
-#include "SDL.h"           // SDL3 include
+#include <SDL.h>
 
 #include "imgui.h"
-#include "imgui_impl_sdl.h"
+#include "imgui_impl_sdl3.h"
 #include "imgui_impl_dx11.h"
 
 #pragma comment(lib, "d3d11.lib")

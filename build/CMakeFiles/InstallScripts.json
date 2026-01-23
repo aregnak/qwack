@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/prj/qwack/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
