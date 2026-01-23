@@ -2,9 +2,10 @@
 #include <d3d11.h>
 
 #include <SDL.h>
+#include <SDL_syswm.h> // for SDL_GetWindowWMInfo
 
 #include "imgui.h"
-#include "imgui_impl_sdl3.h"
+#include "imgui_impl_sdl2.h"
 #include "imgui_impl_dx11.h"
 
 #pragma comment(lib, "d3d11.lib")
@@ -68,28 +69,37 @@ void CleanupD3D() {
 
 int main(int, char**)
 {
-    // SDL init
+    // SDL2 init
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         SDL_Log("SDL_Init Error: %s", SDL_GetError());
         return 1;
     }
 
     // SDL window flags: borderless, always on top
-    SDL_WindowFlags window_flags = SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN;
+    SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS);
 
-    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", 300, 50, window_flags);
+    SDL_Window* window = SDL_CreateWindow(
+        "CS/min Overlay",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        300,
+        50,
+        window_flags
+    );
 
     if (!window) {
         SDL_Log("SDL_CreateWindow Error: %s", SDL_GetError());
         return 1;
     }
 
-    // SDL3: get native HWND directly
-    //HWND hwnd = (HWND)SDL_GetPlatformWindow(window);
-
-    HWND hwnd = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(window), 
-                                    SDL_PROP_WINDOW_WIN32_HWND_POINTER, 
-                                    nullptr);
+    // SDL2: get native HWND using SDL_SysWMinfo
+    SDL_SysWMinfo wmInfo;
+    SDL_VERSION(&wmInfo.version);
+    if (!SDL_GetWindowWMInfo(window, &wmInfo)) {
+        SDL_Log("SDL_GetWindowWMInfo failed: %s", SDL_GetError());
+        return 1;
+    }
+    HWND hwnd = wmInfo.info.win.window;
 
     // Make window click-through (transparent to mouse)
     LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
@@ -109,25 +119,25 @@ int main(int, char**)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
-    ImGui_ImplSDL3_InitForD3D(window);
+    ImGui_ImplSDL2_InitForD3D(window);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
     bool running = true;
     SDL_Event event;
     while (running) {
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT)
+            if (event.type == SDL_QUIT)
                 running = false;
-            ImGui_ImplSDL3_ProcessEvent(&event);
+            ImGui_ImplSDL2_ProcessEvent(&event);
         }
 
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
+        ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        // Your overlay UI
-        ImGui::SetNextWindowBgAlpha(0.5f); // semi-transparent background
+        // Overlay UI
+        ImGui::SetNextWindowBgAlpha(0.5f);
         ImGui::Begin("CS/min", nullptr,
             ImGuiWindowFlags_NoTitleBar |
             ImGuiWindowFlags_NoResize |
@@ -141,15 +151,15 @@ int main(int, char**)
         // Render
         ImGui::Render();
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
-        const float clear_color[4] = { 0.f, 0.f, 0.f, 0.f }; // fully transparent
+        const float clear_color[4] = { 0.f, 0.f, 0.f, 0.f };
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        g_pSwapChain->Present(1, 0); // vsync
+        g_pSwapChain->Present(1, 0);
     }
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
     CleanupD3D();
     SDL_DestroyWindow(window);
