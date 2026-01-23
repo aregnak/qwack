@@ -8,30 +8,35 @@
 
 #define LCU_LOG(x) std::cout << "[LCU] " << x << std::endl
 
-struct LCUInfo {
+struct LCUInfo
+{
     int port;
     std::string password;
 };
 
-inline LCUInfo parseLockfile() {
+inline LCUInfo parseLockfile()
+{
     std::ifstream file("C:\\Riot Games\\League of Legends\\lockfile");
 
     if (!file.is_open())
     {
         LCU_LOG("Failed to open lockfile");
-        return {0, ""};
+        return { 0, "" };
     }
     std::string line;
-    LCUInfo info{0, ""};
+    LCUInfo info{ 0, "" };
 
-    if (std::getline(file, line)) {
+    if (std::getline(file, line))
+    {
         std::vector<std::string> parts;
         std::stringstream ss(line);
         std::string part;
-        while (std::getline(ss, part, ':')) {
+        while (std::getline(ss, part, ':'))
+        {
             parts.push_back(part);
         }
-        if (parts.size() >= 5) { // safety
+        if (parts.size() >= 5)
+        { // safety
             info.port = std::stoi(parts[2]);
             info.password = parts[3];
         }
