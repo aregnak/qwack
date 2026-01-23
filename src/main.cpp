@@ -75,11 +75,9 @@ int main(int, char**)
     }
 
     // SDL window flags: borderless, always on top
-    Uint32 window_flags = SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN;
+    SDL_WindowFlags window_flags = SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN;
 
-    SDL_Window* window = SDL_CreateWindow("CS/min Overlay",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        300, 50, window_flags);
+    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", 300, 50, window_flags);
 
     if (!window) {
         SDL_Log("SDL_CreateWindow Error: %s", SDL_GetError());
@@ -87,7 +85,11 @@ int main(int, char**)
     }
 
     // SDL3: get native HWND directly
-    HWND hwnd = (HWND)SDL_GetPlatformWindow(window);
+    //HWND hwnd = (HWND)SDL_GetPlatformWindow(window);
+
+    HWND hwnd = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(window), 
+                                    SDL_PROP_WINDOW_WIN32_HWND_POINTER, 
+                                    nullptr);
 
     // Make window click-through (transparent to mouse)
     LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
@@ -107,21 +109,21 @@ int main(int, char**)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     ImGui::StyleColorsDark();
-    ImGui_ImplSDL2_InitForD3D(window);
+    ImGui_ImplSDL3_InitForD3D(window);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
     bool running = true;
     SDL_Event event;
     while (running) {
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT)
+            if (event.type == SDL_EVENT_QUIT)
                 running = false;
-            ImGui_ImplSDL2_ProcessEvent(&event);
+            ImGui_ImplSDL3_ProcessEvent(&event);
         }
 
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();
-        ImGui_ImplSDL2_NewFrame(window);
+        ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
         // Your overlay UI
@@ -147,7 +149,7 @@ int main(int, char**)
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
     CleanupD3D();
     SDL_DestroyWindow(window);

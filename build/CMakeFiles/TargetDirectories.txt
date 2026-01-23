@@ -1,3 +1,0 @@
-C:/prj/qwack/build/CMakeFiles/lol_cs_counter.dir
-C:/prj/qwack/build/CMakeFiles/ALL_BUILD.dir
-C:/prj/qwack/build/CMakeFiles/ZERO_CHECK.dir

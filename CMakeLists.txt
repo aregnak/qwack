@@ -25,9 +25,9 @@ add_executable(lol_cs_counter
 )
 
 target_link_libraries(lol_cs_counter
-    SDL2.lib
-    SDL2main.lib
+    SDL3.lib
+    #SDL2main.lib
     d3d11.lib
     dxgi.lib
-    imgui
+    #imgui
 )
