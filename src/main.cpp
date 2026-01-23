@@ -1,12 +1,34 @@
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#define _WIN32_WINNT 0x0A00
+
 #include <windows.h>
 #include <d3d11.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <chrono>
 
 #include <SDL.h>
-#include <SDL_syswm.h> // for SDL_GetWindowWMInfo
+#include <SDL_syswm.h>
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_dx11.h"
+
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+
+#include "httplib.h"
+#include "json.hpp"
+
+// LCU debug prints
+#define LCU_LOG(x) std::cout << "[LCU] " << x << std::endl
+
+#include "getcs.h"
+#include "parser.h"
+
+// using json = nlohmann::json;
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -82,7 +104,7 @@ int main(int, char**)
         "CS/min Overlay",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        300,
+        150,
         50,
         window_flags
     );
@@ -106,6 +128,9 @@ int main(int, char**)
     SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
     SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA); // fully opaque but click-through
 
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+    SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
     SDL_ShowWindow(window);
 
     // Init DX11
@@ -113,6 +138,11 @@ int main(int, char**)
         SDL_Log("Failed to init DX11");
         return 1;
     }
+
+    LCUInfo lcu = parseLockfile();
+    std::string playerName = "SUPRAAA";
+    float cs_per_min = 0.0f;
+    auto lastPoll = std::chrono::steady_clock::now();
 
     // ImGui setup
     IMGUI_CHECKVERSION();
@@ -131,6 +161,12 @@ int main(int, char**)
             ImGui_ImplSDL2_ProcessEvent(&event);
         }
 
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 1000) {
+            cs_per_min = getCSPerMin(lcu, playerName);
+            lastPoll = now;
+        }
+
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplSDL2_NewFrame();
@@ -145,7 +181,7 @@ int main(int, char**)
             ImGuiWindowFlags_NoMove |
             ImGuiWindowFlags_NoSavedSettings |
             ImGuiWindowFlags_NoFocusOnAppearing);
-        ImGui::Text("CS/min: 0.00");
+        ImGui::Text("CS/min: %.2f", cs_per_min);
         ImGui::End();
 
         // Render
