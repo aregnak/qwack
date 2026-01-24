@@ -38,7 +38,7 @@ inline std::string base64(const std::string& in)
     return out;
 }
 
-inline float getCSPerMin(const LCUInfo& lcuInfo, const std::string& playerName)
+inline float pollLCU(const LCUInfo& lcuInfo, const std::string& playerName)
 {
     std::stringstream ss;
     ss << "riot:" << lcuInfo.password;
@@ -56,12 +56,22 @@ inline float getCSPerMin(const LCUInfo& lcuInfo, const std::string& playerName)
     if (!res)
     {
         LCU_LOG("ERROR: No response from LCU... Trying again.");
-        return 0.0f;
+        return -1.0f;
     }
 
     LCU_LOG("HTTP status: " << res->status);
+    if (res->status != 200)
+    {
+        return -1.0f;
+    }
 
     auto j = json::parse(res->body);
+    if (j.is_discarded())
+    {
+        LCU_LOG("JSON parse failed");
+        return -1.0f;
+    }
+
     float gameTime = j["gameData"]["gameTime"];
     int cs = 0;
     for (auto& p : j["allPlayers"])

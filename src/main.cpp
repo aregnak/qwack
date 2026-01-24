@@ -171,7 +171,7 @@ int main(int, char**)
         lcu = parseLockfile();
     }
     std::string playerName = "SUPRAAA#4769";
-    float cs_per_min = 0.0f;
+    float cs_per_min = -1.0f;
     auto lastPoll = std::chrono::steady_clock::now();
 
     // ImGui setup
@@ -197,7 +197,7 @@ int main(int, char**)
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 1000)
         {
-            cs_per_min = getCSPerMin(lcu, playerName);
+            cs_per_min = pollLCU(lcu, playerName);
             lastPoll = now;
         }
 
@@ -210,11 +210,19 @@ int main(int, char**)
         ImGui::SetNextWindowBgAlpha(0.5f);
         ImGui::SetNextWindowPos(imguiPos, ImGuiCond_Always);
         ImGui::SetNextWindowSize(imguiSize, ImGuiCond_Always);
-        ImGui::Begin("CS/min", nullptr,
+        ImGui::Begin("NULL", nullptr,
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
                          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing);
-        ImGui::Text("CS/min: %.2f", cs_per_min);
+
+        if (cs_per_min < 0.0f)
+        {
+            ImGui::Text("Waiting for game.");
+        }
+        else
+        {
+            ImGui::Text("CS/min: %.2f", cs_per_min);
+        }
         ImGui::End();
 
         // Render
