@@ -45,7 +45,6 @@ inline float getCSPerMin(const LCUInfo& lcuInfo, const std::string& playerName)
     std::string auth = base64(ss.str());
 
     LCU_LOG("Polling LCU...");
-    LCU_LOG("Target player: " << playerName);
 
     httplib::SSLClient cli("127.0.0.1", 2999);
     cli.enable_server_certificate_verification(false);
@@ -56,7 +55,7 @@ inline float getCSPerMin(const LCUInfo& lcuInfo, const std::string& playerName)
 
     if (!res)
     {
-        LCU_LOG("ERROR: No response from LCU");
+        LCU_LOG("ERROR: No response from LCU... Trying again.");
         return 0.0f;
     }
 

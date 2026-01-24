@@ -25,7 +25,7 @@
 // LCU debug prints
 #define LCU_LOG(x) std::cout << "[LCU] " << x << std::endl
 
-#include "getcs.h"
+#include "poll.h"
 #include "parser.h"
 
 #pragma comment(lib, "d3d11.lib")
@@ -108,6 +108,13 @@ void CleanupD3D()
 
 int main(int, char**)
 {
+    const int windowW = 150;
+    const int windowH = 50;
+
+    // ImGui screen
+    ImVec2 imguiSize = ImVec2(120, 30);
+    ImVec2 imguiPos = ImVec2((windowW - imguiSize.x) * 0.5f, (windowH - imguiSize.y) * 0.5f);
+
     // SDL2 init
     if (SDL_Init(SDL_INIT_VIDEO) != 0)
     {
@@ -115,18 +122,21 @@ int main(int, char**)
         return 1;
     }
 
+    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     // SDL window flags: borderless, always on top
     SDL_WindowFlags window_flags =
         (SDL_WindowFlags)(SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS);
 
-    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", SDL_WINDOWPOS_CENTERED,
-                                          SDL_WINDOWPOS_CENTERED, 150, 50, window_flags);
+    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", 1750, SDL_WINDOWPOS_CENTERED, windowW,
+                                          windowH, window_flags);
 
     if (!window)
     {
         SDL_Log("SDL_CreateWindow Error: %s", SDL_GetError());
         return 1;
     }
+
+    // SDL_SetWindowOpacity(window, 0.5f);
 
     // SDL2: get native HWND using SDL_SysWMinfo
     SDL_SysWMinfo wmInfo;
@@ -154,7 +164,12 @@ int main(int, char**)
         return 1;
     }
 
-    LCUInfo lcu = parseLockfile();
+    LCUInfo lcu;
+    while (lcu.port == 0)
+    {
+        std::cout << "Waiting for League client (open it...)" << std::endl;
+        lcu = parseLockfile();
+    }
     std::string playerName = "SUPRAAA#4769";
     float cs_per_min = 0.0f;
     auto lastPoll = std::chrono::steady_clock::now();
@@ -169,6 +184,7 @@ int main(int, char**)
 
     bool running = true;
     SDL_Event event;
+
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -192,6 +208,8 @@ int main(int, char**)
 
         // Overlay UI
         ImGui::SetNextWindowBgAlpha(0.5f);
+        ImGui::SetNextWindowPos(imguiPos, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(imguiSize, ImGuiCond_Always);
         ImGui::Begin("CS/min", nullptr,
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |

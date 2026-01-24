@@ -10,7 +10,7 @@
 
 struct LCUInfo
 {
-    int port;
+    int port = 0;
     std::string password;
 };
 
@@ -20,7 +20,7 @@ inline LCUInfo parseLockfile()
 
     if (!file.is_open())
     {
-        LCU_LOG("Failed to open lockfile");
+        //LCU_LOG("Failed to open lockfile");
         return { 0, "" };
     }
     std::string line;
