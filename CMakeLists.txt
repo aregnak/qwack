@@ -19,6 +19,7 @@ link_directories("${CMAKE_SOURCE_DIR}/libs/SDL/lib")
 
 add_executable(lol_cs_counter
     src/main.cpp
+    src/poll.cpp
     libs/imgui/imgui.cpp
     libs/imgui/imgui_draw.cpp
     libs/imgui/imgui_tables.cpp

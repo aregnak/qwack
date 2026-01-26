@@ -127,8 +127,8 @@ int main(int, char**)
     SDL_WindowFlags window_flags =
         (SDL_WindowFlags)(SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS);
 
-    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", 1750, SDL_WINDOWPOS_CENTERED, windowW,
-                                          windowH, window_flags);
+    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", SDL_WINDOWPOS_CENTERED,
+                                          SDL_WINDOWPOS_CENTERED, windowW, windowH, window_flags);
 
     if (!window)
     {
@@ -170,9 +170,6 @@ int main(int, char**)
         std::cout << "Waiting for League client (open it...)" << std::endl;
         lcu = parseLockfile();
     }
-    std::string playerName = "SUPRAAA#4769";
-    float cs_per_min = -1.0f;
-    auto lastPoll = std::chrono::steady_clock::now();
 
     // ImGui setup
     IMGUI_CHECKVERSION();
@@ -185,6 +182,12 @@ int main(int, char**)
     bool running = true;
     SDL_Event event;
 
+    poll poller;
+
+    std::string playerName = poller.getPlayerName(); //= "SUPRAAA#4769";
+    float cs_per_min = -1.0f;
+    auto lastPoll = std::chrono::steady_clock::now();
+
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -195,10 +198,17 @@ int main(int, char**)
         }
 
         auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 1000)
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 200)
         {
-            cs_per_min = pollLCU(lcu, playerName);
-            lastPoll = now;
+            if (poller.update())
+            {
+                cs_per_min = poller.getcs(playerName);
+                lastPoll = now;
+            }
+            else
+            {
+                cs_per_min = -1.0f;
+            }
         }
 
         // Start ImGui frame

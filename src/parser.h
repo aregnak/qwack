@@ -1,3 +1,5 @@
+// This file is not needed for now, I misunderstood the LCU API at first.
+
 #pragma once
 
 #include <iostream>
@@ -5,8 +7,6 @@
 #include <string>
 #include <vector>
 #include <sstream>
-
-#define LCU_LOG(x) std::cout << "[LCU] " << x << std::endl
 
 struct LCUInfo
 {
