@@ -15,8 +15,12 @@ public:
     poll();
 
     bool update(); // Live Client Data API
+
     std::string getPlayerName(const LCUInfo&);
-    float getcs(const std::string& playerName);
+
+    float getGameTime();
+    int getcs(const std::string& playerName);
+    float getGold();
 
 private:
     httplib::SSLClient cli;

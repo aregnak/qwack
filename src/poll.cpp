@@ -65,7 +65,7 @@ std::string poll::getPlayerName(const LCUInfo& lcu)
     return nstream.str();
 }
 
-float poll::getcs(const std::string& playerName)
+float poll::getGameTime()
 {
     auto j = json::parse(res->body);
     if (j.is_discarded())
@@ -75,35 +75,41 @@ float poll::getcs(const std::string& playerName)
     }
 
     float gameTime = j["gameData"]["gameTime"];
+    return gameTime;
+}
+
+int poll::getcs(const std::string& playerName)
+{
+    auto j = json::parse(res->body);
+    if (j.is_discarded())
+    {
+        LCU_LOG("JSON parse failed");
+        return -1.0f;
+    }
+
     int cs = 0;
-    float gold = 0.0f;
     for (auto& p : j["allPlayers"])
     {
         if (p["summonerName"].get<std::string>() == playerName)
         {
             cs = p["scores"]["creepScore"];
-            LCU_LOG("Found player " << playerName << " CS=" << cs);
         }
     }
 
-    // float tempTime = 0;
-    // float goldDelta = 0;
-    // float prevGold = 0;
+    return cs;
+}
 
-    // gold = j["activePlayer"]["currentGold"];
-    // std::cout << "Player Gold: " << gold << std::endl;
+float poll::getGold()
+{
+    auto j = json::parse(res->body);
+    if (j.is_discarded())
+    {
+        LCU_LOG("JSON parse failed");
+        return -1.0f;
+    }
 
-    // if (tempTime <= gameTime - 0.8f)
-    // {
-    //     tempTime = gameTime;
-    //     prevGold = gold;
-    // }
+    float gold = j["activePlayer"]["currentGold"];
+    LCU_LOG("Player Gold: " << gold);
 
-    // goldDelta = gold - prevGold;
-    // std::cout << "Gold delta: " << goldDelta << std::endl;
-
-    float cspm = cs / (gameTime / 60.0f);
-
-    LCU_LOG("CS/min = " << cspm);
-    return cspm;
+    return gold;
 }

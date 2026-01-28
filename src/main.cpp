@@ -221,7 +221,16 @@ int main(int, char**)
     }
     LCU_LOG("Summoner found: " << playerName);
 
-    float cs_per_min = -1.0f;
+    float gameTime = 0.0f;
+
+    float csPerMin = -1.0f;
+    int currentCS = 0;
+    int lastCS = 0;
+    int estimatedCS = 0;
+    int totalCS = 0;
+
+    float currentGold = 0.0f;
+    float lastGold = 0.0f;
 
     bool running = true;
     SDL_Event event;
@@ -235,19 +244,61 @@ int main(int, char**)
             ImGui_ImplSDL2_ProcessEvent(&event);
         }
 
+        if (poller.update())
+        {
+            currentGold = poller.getGold();
+        }
+
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 500)
         {
             if (poller.update())
             {
-                cs_per_min = poller.getcs(playerName);
+                currentCS = poller.getcs(playerName);
+
+                // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
+                if (lastCS == currentCS)
+                {
+                    if (currentGold - lastGold > 14)
+                    {
+                        estimatedCS++;
+                    }
+                    // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
+                    lastGold = currentGold;
+                }
+                else
+                {
+                    lastCS = currentCS;
+                    estimatedCS = 0;
+                }
+
+                totalCS = estimatedCS + currentCS;
+
+                // This is really just to make it a slight bit more accurate in case
+                // something triggers a lot of "additional cs" but in reality it is something else.
+                if (totalCS - currentCS > 10)
+                {
+                    estimatedCS--;
+                }
+
+                gameTime = poller.getGameTime();
+                csPerMin = (currentCS + estimatedCS) / (gameTime / 60.0f);
                 lastPoll = now;
             }
             else
             {
-                cs_per_min = -1.0f;
+                csPerMin = -1.0f;
             }
         }
+        std::cout << "\n" << std::endl;
+        LCU_LOG("Gold delta: " << currentGold - lastGold);
+        LCU_LOG("last Gold: " << lastGold);
+        LCU_LOG("current Gold: " << currentGold);
+        std::cout << "\n" << std::endl;
+
+        LCU_LOG("CS/min: " << csPerMin);
+        LCU_LOG("CS: " << currentCS + estimatedCS);
+        LCU_LOG("last CS: " << lastCS);
 
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();
@@ -263,13 +314,13 @@ int main(int, char**)
                          ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
                          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing);
 
-        if (cs_per_min < 0.0f)
+        if (csPerMin < 0.0f)
         {
             ImGui::Text("Waiting for game.");
         }
         else
         {
-            ImGui::Text("CS/min: %.2f", cs_per_min);
+            ImGui::Text("CS/min: %.2f", csPerMin);
         }
         ImGui::End();
 
