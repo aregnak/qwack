@@ -282,7 +282,7 @@ int main(int, char**)
                 }
 
                 gameTime = poller.getGameTime();
-                csPerMin = (currentCS + estimatedCS) / (gameTime / 60.0f);
+                csPerMin = totalCS / (gameTime / 60.0f);
                 lastPoll = now;
             }
             else
@@ -292,13 +292,13 @@ int main(int, char**)
         }
         std::cout << "\n" << std::endl;
         LCU_LOG("Gold delta: " << currentGold - lastGold);
-        LCU_LOG("last Gold: " << lastGold);
-        LCU_LOG("current Gold: " << currentGold);
+        LCU_LOG("Last Gold: " << lastGold);
+        LCU_LOG("Current Gold: " << currentGold);
         std::cout << "\n" << std::endl;
 
+        LCU_LOG("Total CS: " << totalCS);
+        LCU_LOG("Last CS: " << lastCS);
         LCU_LOG("CS/min: " << csPerMin);
-        LCU_LOG("CS: " << currentCS + estimatedCS);
-        LCU_LOG("last CS: " << lastCS);
 
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();
