@@ -8,6 +8,8 @@
 #include <vector>
 #include <sstream>
 
+#define LCU_LOG(x) std::cout << "[LCU] " << x << std::endl
+
 struct LCUInfo
 {
     int port = 0;

@@ -127,8 +127,8 @@ int main(int, char**)
     SDL_WindowFlags window_flags =
         (SDL_WindowFlags)(SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS);
 
-    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", SDL_WINDOWPOS_CENTERED,
-                                          SDL_WINDOWPOS_CENTERED, windowW, windowH, window_flags);
+    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", 1750, SDL_WINDOWPOS_CENTERED, windowW,
+                                          windowH, window_flags);
 
     if (!window)
     {
@@ -164,13 +164,6 @@ int main(int, char**)
         return 1;
     }
 
-    LCUInfo lcu;
-    while (lcu.port == 0)
-    {
-        std::cout << "Waiting for League client (open it...)" << std::endl;
-        lcu = parseLockfile();
-    }
-
     // ImGui setup
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -179,14 +172,39 @@ int main(int, char**)
     ImGui_ImplSDL2_InitForD3D(window);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-    bool running = true;
-    SDL_Event event;
-
+    LCUInfo lcu;
+    auto lastPoll = std::chrono::steady_clock::now();
+    while (lcu.port == 0)
+    {
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 500)
+        {
+            std::cout << "Waiting for League client (open it...)" << std::endl;
+            lcu = parseLockfile();
+            lastPoll = now;
+        }
+    }
     poll poller;
 
-    std::string playerName = poller.getPlayerName(); //= "SUPRAAA#4769";
+    std::string playerName;
+    lastPoll = std::chrono::steady_clock::now();
+    while (playerName.empty())
+    {
+        auto now = std::chrono::steady_clock::now();
+
+        // 2 second delaay to let the API start.
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 2000)
+        {
+            playerName = poller.getPlayerName(lcu);
+            lastPoll = now;
+        }
+    }
+    LCU_LOG("Summoner found: " << playerName);
+
     float cs_per_min = -1.0f;
-    auto lastPoll = std::chrono::steady_clock::now();
+
+    bool running = true;
+    SDL_Event event;
 
     while (running)
     {
@@ -198,7 +216,7 @@ int main(int, char**)
         }
 
         auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 200)
+        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 500)
         {
             if (poller.update())
             {

@@ -1,4 +1,5 @@
 #include "poll.h"
+#include "parser.h"
 
 using json = nlohmann::json;
 
@@ -28,19 +29,42 @@ bool poll::update()
     return true;
 }
 
-std::string poll::getPlayerName()
+std::string poll::getPlayerName(const LCUInfo& lcu)
 {
-    res = cli.Get("/liveclientdata/activeplayername");
+    std::stringstream ss;
+    ss << "riot:" << lcu.password;
+    std::string auth = base64(ss.str());
 
-    std::string name = json::parse(res->body);
+    httplib::SSLClient ncli("127.0.0.1", lcu.port);
+    ncli.enable_server_certificate_verification(false);
 
-    if (!res) // if res is a nullptr
+    httplib::Headers headers = { { "Authorization", "Basic " + auth } };
+
+    auto nres = ncli.Get("/lol-summoner/v1/current-summoner", headers);
+
+    if (!nres) // if res is a nullptr
     {
-        std::cout << "Not in game.";
+        std::cout << "Failed to get name." << std::endl;
         return "";
     }
 
-    return name;
+    if (nres->status != 200)
+    {
+        return "";
+    }
+
+    auto name = json::parse(nres->body);
+    if (name.is_discarded())
+    {
+        return "";
+    }
+
+    std::stringstream nstream;
+    nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
+
+    std::cout << nstream.str() << std::endl;
+
+    return nstream.str();
 }
 
 float poll::getcs(const std::string& playerName)
