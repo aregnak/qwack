@@ -229,8 +229,8 @@ int main(int, char**)
     int estimatedCS = 0;
     int totalCS = 0;
 
-    float currentGold = 0.0f;
-    float lastGold = 0.0f;
+    float currentGold = 500.0f;
+    float lastGold = 500.0f;
 
     bool running = true;
     SDL_Event event;
@@ -281,6 +281,8 @@ int main(int, char**)
                     estimatedCS--;
                 }
 
+                // The cs/min counter will always be an approximation because the API updates the number
+                // every 10 cs, this algorithm will somewhat smoothen that out, but any
                 gameTime = poller.getGameTime();
                 csPerMin = totalCS / (gameTime / 60.0f);
                 lastPoll = now;
