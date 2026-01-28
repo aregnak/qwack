@@ -62,22 +62,11 @@ std::string poll::getPlayerName(const LCUInfo& lcu)
     std::stringstream nstream;
     nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
 
-    std::cout << nstream.str() << std::endl;
-
     return nstream.str();
 }
 
 float poll::getcs(const std::string& playerName)
 {
-    // LCU_LOG("Polling LCU...");
-
-    // httplib::SSLClient cli("127.0.0.1", 2999);
-    // cli.enable_server_certificate_verification(false);
-
-    // auto res = cli.Get("/liveclientdata/allgamedata");
-
-    // LCU_LOG("HTTP status: " << res->status);
-
     auto j = json::parse(res->body);
     if (j.is_discarded())
     {
@@ -90,11 +79,6 @@ float poll::getcs(const std::string& playerName)
     float gold = 0.0f;
     for (auto& p : j["allPlayers"])
     {
-        // std::string name = p["summonerName"];
-        // std::string team = p["team"];
-
-        // LCU_LOG(" - " << name << " | Team: " << team);
-
         if (p["summonerName"].get<std::string>() == playerName)
         {
             cs = p["scores"]["creepScore"];
@@ -102,21 +86,21 @@ float poll::getcs(const std::string& playerName)
         }
     }
 
-    float tempTime = 0;
-    float goldDelta = 0;
-    float prevGold = 0;
+    // float tempTime = 0;
+    // float goldDelta = 0;
+    // float prevGold = 0;
 
-    gold = j["activePlayer"]["currentGold"];
-    std::cout << "Player Gold: " << gold << std::endl;
+    // gold = j["activePlayer"]["currentGold"];
+    // std::cout << "Player Gold: " << gold << std::endl;
 
-    if (tempTime <= gameTime - 0.8f)
-    {
-        tempTime = gameTime;
-        prevGold = gold;
-    }
+    // if (tempTime <= gameTime - 0.8f)
+    // {
+    //     tempTime = gameTime;
+    //     prevGold = gold;
+    // }
 
-    goldDelta = gold - prevGold;
-    std::cout << "Gold delta: " << goldDelta << std::endl;
+    // goldDelta = gold - prevGold;
+    // std::cout << "Gold delta: " << goldDelta << std::endl;
 
     float cspm = cs / (gameTime / 60.0f);
 
