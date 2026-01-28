@@ -174,16 +174,36 @@ int main(int, char**)
 
     LCUInfo lcu;
     auto lastPoll = std::chrono::steady_clock::now();
-    while (lcu.port == 0)
+
+    // This section has its own scope because the variables created are only needed here.
+    // But this program will only "work" once, especially fetching and parsing the lockfile.
+    // TODO: League client state fetching (closed, open, in game...).
     {
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 500)
+        int pollCounter = 1;
+        int delayS = 1; // Delay in seconds, 0 to poll instantly the first time.
+
+        while (lcu.port == 0)
         {
-            std::cout << "Waiting for League client (open it...)" << std::endl;
-            lcu = parseLockfile();
-            lastPoll = now;
+            auto now = std::chrono::steady_clock::now();
+            if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll).count() > delayS)
+            {
+                if (pollCounter % 30 == 0 && pollCounter < 180)
+                {
+                    delayS += 10;
+                    std::cout << "current delay " << delayS << std::endl;
+                }
+                std::cout << "poll counter: " << pollCounter << std::endl;
+
+                std::cout << "Waiting for League client (open it...)" << std::endl;
+
+                // Poll.
+                lcu = parseLockfile();
+                lastPoll = now;
+                pollCounter++;
+            }
         }
     }
+
     poll poller;
 
     std::string playerName;
