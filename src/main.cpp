@@ -3,6 +3,7 @@
 #define _WIN32_WINNT 0x0A00
 
 #include <windows.h>
+#include <winuser.h>
 #include <d3d11.h>
 #include <iostream>
 #include <fstream>
@@ -104,6 +105,33 @@ void CleanupD3D()
         g_pd3dDevice->Release();
         g_pd3dDevice = nullptr;
     }
+}
+
+bool isLeagueFocused()
+{
+    HWND hwnd = GetForegroundWindow();
+    if (!hwnd)
+        return false;
+
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+
+    HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+    if (!hProcess)
+        return false;
+
+    char path[MAX_PATH];
+    DWORD size = MAX_PATH;
+
+    bool isLeague = false;
+    if (QueryFullProcessImageNameA(hProcess, 0, path, &size))
+    {
+        std::string exe(path);
+        isLeague = exe.find("League of Legends.exe") != std::string::npos;
+    }
+
+    CloseHandle(hProcess);
+    return isLeague;
 }
 
 int main(int, char**)
@@ -232,6 +260,7 @@ int main(int, char**)
     float currentGold = 500.0f;
     float lastGold = 500.0f;
 
+    bool hidden = false;
     bool running = true;
     SDL_Event event;
 
@@ -292,15 +321,35 @@ int main(int, char**)
                 csPerMin = -1.0f;
             }
         }
-        std::cout << "\n" << std::endl;
-        LCU_LOG("Gold delta: " << currentGold - lastGold);
-        LCU_LOG("Last Gold: " << lastGold);
-        LCU_LOG("Current Gold: " << currentGold);
-        std::cout << "\n" << std::endl;
 
-        LCU_LOG("Total CS: " << totalCS);
-        LCU_LOG("Last CS: " << lastCS);
-        LCU_LOG("CS/min: " << csPerMin);
+        if (isLeagueFocused())
+        {
+            if (hidden)
+            {
+                SDL_ShowWindow(window);
+                hidden = false;
+                // LCU_LOG("shown: " << hidden);
+            }
+        }
+        else
+        {
+            if (!hidden)
+            {
+                SDL_HideWindow(window);
+                hidden = true;
+                // LCU_LOG("hidden: " << hidden);
+            }
+        }
+
+        // std::cout << "\n" << std::endl;
+        // LCU_LOG("Gold delta: " << currentGold - lastGold);
+        // LCU_LOG("Last Gold: " << lastGold);
+        // LCU_LOG("Current Gold: " << currentGold);
+        // std::cout << "\n" << std::endl;
+
+        // LCU_LOG("Total CS: " << totalCS);
+        // LCU_LOG("Last CS: " << lastCS);
+        // LCU_LOG("CS/min: " << csPerMin);
 
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();

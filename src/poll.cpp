@@ -19,7 +19,7 @@ bool poll::update()
         return false;
     }
 
-    LCU_LOG("HTTP status: " << res->status);
+    //LCU_LOG("HTTP status: " << res->status);
 
     if (res->status != 200)
     {
@@ -109,7 +109,7 @@ float poll::getGold()
     }
 
     float gold = j["activePlayer"]["currentGold"];
-    LCU_LOG("Player Gold: " << gold);
+    // LCU_LOG("Player Gold: " << gold);
 
     return gold;
 }
