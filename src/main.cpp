@@ -149,8 +149,8 @@ bool isLeagueFocused()
 
 int main(int, char**)
 {
-    const int windowW = 150;
-    const int windowH = 50;
+    constexpr int windowW = 150;
+    constexpr int windowH = 50;
 
     // ImGui screen
     ImVec2 imguiSize = ImVec2(120, 30);
@@ -170,6 +170,8 @@ int main(int, char**)
                           SDL_WINDOW_TRANSPARENT);
 
     SDL_Window* window = SDL_CreateWindow("CS/min Overlay", 1750, 540, window_flags);
+
+    // SDL_SetWindowSize(window, windowW, windowH);
 
     if (!window)
     {
@@ -191,14 +193,14 @@ int main(int, char**)
     // HWND hwnd = wmInfo.info.win.window;
 
     // // Make window click-through (transparent to mouse)
-    // LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-    // SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
-    // SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA); // fully opaque but click-through
-
-    // SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
     SDL_PropertiesID props = SDL_GetWindowProperties(window);
     HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+
+    // LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+    // SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
+    // SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    // SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA); // fully opaque but click-through
 
     // Init DX11
     if (!InitD3D(hwnd))
