@@ -157,11 +157,17 @@ int main(int, char**)
     }
 
     // Get screen area without the taskbar.
-    RECT workArea;
-    SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
-    float screenWidth = workArea.right - workArea.left;
-    float screenHeight = workArea.bottom - workArea.top;
-    std::cout << "Primary screen work area: " << screenWidth << "x" << screenHeight << std::endl;
+    float screenWidth = 0; //workArea.right - workArea.left;
+    float screenHeight = 0; //workArea.bottom - workArea.top;
+
+    {
+        RECT workArea;
+        SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
+        screenWidth = workArea.right - workArea.left;
+        screenHeight = workArea.bottom - workArea.top;
+        std::cout << "Primary screen work area: " << screenWidth << "x" << screenHeight
+                  << std::endl;
+    }
 
     SDL_WindowFlags window_flags =
         (SDL_WindowFlags)(SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS |
@@ -322,6 +328,7 @@ int main(int, char**)
                 currentCS = poller.getcs(playerName);
 
                 gameTime = poller.getGameTime();
+                // Minons spawn after 30 seconds, no need to measure anything before that.
                 if (gameTime >= 30)
                 {
                     // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
@@ -364,7 +371,7 @@ int main(int, char**)
         {
             if (hidden)
             {
-                //SDL_ShowWindow(window);
+                SDL_ShowWindow(window);
                 hidden = false;
                 // LCU_LOG("shown: " << hidden);
             }
@@ -373,7 +380,7 @@ int main(int, char**)
         {
             if (!hidden)
             {
-                //SDL_HideWindow(window);
+                SDL_HideWindow(window);
                 hidden = true;
                 // LCU_LOG("hidden: " << hidden);
             }
@@ -419,7 +426,7 @@ int main(int, char**)
         const float clear_color[4] = { 0.f, 0.f, 0.f, 0.f };
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        g_pSwapChain->Present(1, 0);
+        g_pSwapChain->Present(1, 0); // With vsync
     }
 
     // Cleanup
