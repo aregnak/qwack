@@ -149,13 +149,6 @@ bool isLeagueFocused()
 
 int main(int, char**)
 {
-    constexpr int windowW = 150;
-    constexpr int windowH = 50;
-
-    // ImGui screen
-    ImVec2 imguiSize = ImVec2(120, 30);
-    ImVec2 imguiPos = ImVec2((windowW - imguiSize.x) * 0.5f, (windowH - imguiSize.y) * 0.5f);
-
     // SDL2 init
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
@@ -163,15 +156,21 @@ int main(int, char**)
         return 1;
     }
 
-    SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-    // SDL window flags: borderless, always on top
+    // Get screen area without the taskbar.
+    RECT workArea;
+    SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
+    float screenWidth = workArea.right - workArea.left;
+    float screenHeight = workArea.bottom - workArea.top;
+    std::cout << "Primary screen work area: " << screenWidth << "x" << screenHeight << std::endl;
+
     SDL_WindowFlags window_flags =
         (SDL_WindowFlags)(SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS |
-                          SDL_WINDOW_TRANSPARENT);
+                          SDL_WINDOW_TRANSPARENT | SDL_WINDOW_NOT_FOCUSABLE);
 
-    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", 1750, 540, window_flags);
+    SDL_Window* window =
+        SDL_CreateWindow("CS/min Overlay", screenWidth, screenHeight, window_flags);
 
-    // SDL_SetWindowSize(window, windowW, windowH);
+    SDL_SetWindowSize(window, screenWidth, screenHeight);
 
     if (!window)
     {
@@ -197,10 +196,10 @@ int main(int, char**)
     SDL_PropertiesID props = SDL_GetWindowProperties(window);
     HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 
-    // LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-    // SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
-    // SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    // SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA); // fully opaque but click-through
+    LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+    SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA); // fully opaque but click-through
 
     // Init DX11
     if (!InitD3D(hwnd))
@@ -222,6 +221,12 @@ int main(int, char**)
 
     ImGui_ImplSDL3_InitForD3D(window);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
+
+    // CS/min screen. Static until I add dynamic placement.
+    ImVec2 cspmSize = ImVec2(120, 30);
+    ImVec2 cspmPos =
+        ImVec2((screenWidth - (cspmSize.x * 1.2)), (screenHeight / 2) - (screenHeight / 10));
+    std::cout << "pos: " << cspmPos.x << " " << cspmPos.y << std::endl;
 
     LCUInfo lcu;
     auto lastPoll = std::chrono::steady_clock::now();
@@ -294,7 +299,14 @@ int main(int, char**)
         {
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
+            {
                 running = false;
+            }
+            if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
+                event.window.windowID == SDL_GetWindowID(window))
+            {
+                running = false;
+            }
         }
 
         if (poller.update())
@@ -309,34 +321,36 @@ int main(int, char**)
             {
                 currentCS = poller.getcs(playerName);
 
-                // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
-                if (lastCS == currentCS)
+                gameTime = poller.getGameTime();
+                if (gameTime <= 30)
                 {
-                    if (currentGold - lastGold > 14)
+                    // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
+                    if (lastCS == currentCS)
                     {
-                        estimatedCS++;
+                        if (currentGold - lastGold > 14)
+                        {
+                            estimatedCS++;
+                        }
+                        // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
+                        lastGold = currentGold;
                     }
-                    // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
-                    lastGold = currentGold;
-                }
-                else
-                {
-                    lastCS = currentCS;
-                    estimatedCS = 0;
-                }
+                    else
+                    {
+                        lastCS = currentCS;
+                        estimatedCS = 0;
+                    }
 
-                totalCS = estimatedCS + currentCS;
+                    totalCS = estimatedCS + currentCS;
 
-                // This is really just to make it a slight bit more accurate in case
-                // something triggers a lot of "additional cs" but in reality it is something else.
-                if (totalCS - currentCS > 10)
-                {
-                    estimatedCS--;
+                    // This is really just to make it a slight bit more accurate in case
+                    // something triggers a lot of "additional cs" but in reality it is something else.
+                    if (totalCS - currentCS > 10)
+                    {
+                        estimatedCS--;
+                    }
                 }
-
                 // The cs/min counter will always be an approximation because the API updates the number
                 // every 10 cs, this algorithm will somewhat smoothen that out, but any
-                gameTime = poller.getGameTime();
                 csPerMin = totalCS / (gameTime / 60.0f);
                 lastPoll = now;
             }
@@ -381,9 +395,9 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // Overlay UI
-        // ImGui::SetNextWindowBgAlpha(0.5f);
-        ImGui::SetNextWindowPos(imguiPos, ImGuiCond_Always);
-        ImGui::SetNextWindowSize(imguiSize, ImGuiCond_Always);
+        ImGui::SetNextWindowBgAlpha(0.4f);
+        ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
         ImGui::Begin("NULL", nullptr,
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
