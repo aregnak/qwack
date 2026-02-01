@@ -322,7 +322,7 @@ int main(int, char**)
                 currentCS = poller.getcs(playerName);
 
                 gameTime = poller.getGameTime();
-                if (gameTime <= 30)
+                if (gameTime >= 30)
                 {
                     // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
                     if (lastCS == currentCS)
