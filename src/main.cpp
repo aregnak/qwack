@@ -10,12 +10,13 @@
 #include <string>
 #include <vector>
 #include <chrono>
+// #include <dxgi1_2.h>
 
 #include <SDL.h>
-#include <SDL_syswm.h>
+// #include <SDL_syswm.h>
 
 #include "imgui.h"
-#include "imgui_impl_sdl2.h"
+#include "imgui_impl_sdl3.h"
 #include "imgui_impl_dx11.h"
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
@@ -59,8 +60,9 @@ void CleanupRenderTarget()
 // DX11 initialization
 bool InitD3D(HWND hwnd)
 {
-    DXGI_SWAP_CHAIN_DESC sd = {};
-    sd.BufferCount = 1;
+    DXGI_SWAP_CHAIN_DESC sd;
+    ZeroMemory(&sd, sizeof(sd));
+    sd.BufferCount = 2;
     sd.BufferDesc.Width = 0;
     sd.BufferDesc.Height = 0;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -75,11 +77,22 @@ bool InitD3D(HWND hwnd)
     sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
     UINT createDeviceFlags = 0;
+    //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
     D3D_FEATURE_LEVEL featureLevel;
-    const D3D_FEATURE_LEVEL featureLevelArray[1] = { D3D_FEATURE_LEVEL_11_0 };
-    if (D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags,
-                                      featureLevelArray, 1, D3D11_SDK_VERSION, &sd, &g_pSwapChain,
-                                      &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext) != S_OK)
+    const D3D_FEATURE_LEVEL featureLevelArray[2] = {
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_0,
+    };
+    HRESULT res = D3D11CreateDeviceAndSwapChain(
+        nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2,
+        D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
+    if (res ==
+        DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
+        res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr,
+                                            createDeviceFlags, featureLevelArray, 2,
+                                            D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice,
+                                            &featureLevel, &g_pd3dDeviceContext);
+    if (res != S_OK)
         return false;
 
     CreateRenderTarget();
@@ -144,46 +157,48 @@ int main(int, char**)
     ImVec2 imguiPos = ImVec2((windowW - imguiSize.x) * 0.5f, (windowH - imguiSize.y) * 0.5f);
 
     // SDL2 init
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
+    if (!SDL_Init(SDL_INIT_VIDEO))
     {
-        SDL_Log("SDL_Init Error: %s", SDL_GetError());
+        printf("Error: SDL_Init(): %s\n", SDL_GetError());
         return 1;
     }
 
     SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
     // SDL window flags: borderless, always on top
     SDL_WindowFlags window_flags =
-        (SDL_WindowFlags)(SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS);
+        (SDL_WindowFlags)(SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS |
+                          SDL_WINDOW_TRANSPARENT);
 
-    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", 1750, SDL_WINDOWPOS_CENTERED, windowW,
-                                          windowH, window_flags);
+    SDL_Window* window = SDL_CreateWindow("CS/min Overlay", 1750, 540, window_flags);
 
     if (!window)
     {
         SDL_Log("SDL_CreateWindow Error: %s", SDL_GetError());
         return 1;
     }
+    // SDL_SetWindowOpacity(window, 1.0f);
 
     // SDL_SetWindowOpacity(window, 0.5f);
 
     // SDL2: get native HWND using SDL_SysWMinfo
-    SDL_SysWMinfo wmInfo;
-    SDL_VERSION(&wmInfo.version);
-    if (!SDL_GetWindowWMInfo(window, &wmInfo))
-    {
-        SDL_Log("SDL_GetWindowWMInfo failed: %s", SDL_GetError());
-        return 1;
-    }
-    HWND hwnd = wmInfo.info.win.window;
+    // SDL_SysWMinfo wmInfo;
+    // SDL_VERSION(&wmInfo.version);
+    // if (!SDL_GetWindowWMInfo(window, &wmInfo))
+    // {
+    //     SDL_Log("SDL_GetWindowWMInfo failed: %s", SDL_GetError());
+    //     return 1;
+    // }
+    // HWND hwnd = wmInfo.info.win.window;
 
-    // Make window click-through (transparent to mouse)
-    LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
-    SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
-    SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA); // fully opaque but click-through
+    // // Make window click-through (transparent to mouse)
+    // LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+    // SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
+    // SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA); // fully opaque but click-through
 
-    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    // SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
-    SDL_ShowWindow(window);
+    SDL_PropertiesID props = SDL_GetWindowProperties(window);
+    HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 
     // Init DX11
     if (!InitD3D(hwnd))
@@ -192,12 +207,18 @@ int main(int, char**)
         return 1;
     }
 
+    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+
+    SDL_ShowWindow(window);
+
     // ImGui setup
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
+    (void)io;
     ImGui::StyleColorsDark();
-    ImGui_ImplSDL2_InitForD3D(window);
+
+    ImGui_ImplSDL3_InitForD3D(window);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
     LCUInfo lcu;
@@ -261,6 +282,7 @@ int main(int, char**)
     float lastGold = 500.0f;
 
     bool hidden = false;
+
     bool running = true;
     SDL_Event event;
 
@@ -268,9 +290,9 @@ int main(int, char**)
     {
         while (SDL_PollEvent(&event))
         {
-            if (event.type == SDL_QUIT)
+            ImGui_ImplSDL3_ProcessEvent(&event);
+            if (event.type == SDL_EVENT_QUIT)
                 running = false;
-            ImGui_ImplSDL2_ProcessEvent(&event);
         }
 
         if (poller.update())
@@ -326,7 +348,7 @@ int main(int, char**)
         {
             if (hidden)
             {
-                SDL_ShowWindow(window);
+                //SDL_ShowWindow(window);
                 hidden = false;
                 // LCU_LOG("shown: " << hidden);
             }
@@ -335,7 +357,7 @@ int main(int, char**)
         {
             if (!hidden)
             {
-                SDL_HideWindow(window);
+                //SDL_HideWindow(window);
                 hidden = true;
                 // LCU_LOG("hidden: " << hidden);
             }
@@ -353,11 +375,11 @@ int main(int, char**)
 
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
+        ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
         // Overlay UI
-        ImGui::SetNextWindowBgAlpha(0.5f);
+        // ImGui::SetNextWindowBgAlpha(0.5f);
         ImGui::SetNextWindowPos(imguiPos, ImGuiCond_Always);
         ImGui::SetNextWindowSize(imguiSize, ImGuiCond_Always);
         ImGui::Begin("NULL", nullptr,
@@ -386,8 +408,9 @@ int main(int, char**)
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
+
     CleanupD3D();
     SDL_DestroyWindow(window);
     SDL_Quit();
