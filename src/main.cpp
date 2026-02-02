@@ -8,6 +8,8 @@
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <algorithm>
+#include <future>
 // #include <dxgi1_2.h>
 
 #include <SDL.h>
@@ -307,20 +309,34 @@ int main(int, char**)
 
     puuids = poller.getPUUIDs(lcuC);
 
-    for (size_t i = 0; i < players.size(); i++)
-    {
-        // PlayerInfo player = players[i];
-        // std::string puuid = puuids[i];
+    std::vector<std::future<PlayerInfo>> futures;
 
-        players[i].puuid = puuids[i];
-        players[i].riotID = poller.getPlayerName(lcuC, puuids[i]);
-        players[i].rank = poller.getPlayerRank(lcuC, puuids[i]);
+    for (const auto& puuid : puuids)
+    {
+        futures.push_back(std::async(std::launch::async,
+                                     [&poller, &lcuC, puuid]
+                                     {
+                                         PlayerInfo p;
+                                         p.puuid = puuid;
+                                         p.riotID = poller.getPlayerName(lcuC, puuid);
+                                         p.rank = poller.getPlayerRank(lcuC, puuid);
+                                         return p;
+                                     }));
+    }
+
+    for (size_t i = 0; i < futures.size(); i++)
+    {
+        players[i] = futures[i].get();
+
+        // players[i].puuid = puuids[i];
+        // players[i].riotID = poller.getPlayerName(lcuC, puuids[i]);
+        // players[i].rank = poller.getPlayerRank(lcuC, puuids[i]);
     }
 
     for (auto& p : players)
     {
-        // std::cout << "Player: \npuuid: " << p.puuid << " riotID: " << p.riotID
-        //           << " rank: " << p.rank << std::endl;
+        std::cout << "Player: \npuuid: " << p.puuid << " riotID: " << p.riotID
+                  << " rank: " << p.rank << std::endl;
     }
 
     std::cout << "At running loop." << std::endl;
