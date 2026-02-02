@@ -1,5 +1,4 @@
 #include "poll.h"
-#include "parser.h"
 
 using json = nlohmann::json;
 
@@ -15,7 +14,7 @@ bool poll::update()
 
     if (!res) // if res is a nullptr
     {
-        std::cout << "Not in game.";
+        //std::cout << "Not in game.";
         return false;
     }
 
@@ -29,18 +28,9 @@ bool poll::update()
     return true;
 }
 
-std::string poll::getPlayerName(const LCUInfo& lcu)
+std::string poll::getPlayerName(LCUClient& lcu)
 {
-    std::stringstream ss;
-    ss << "riot:" << lcu.password;
-    std::string auth = base64(ss.str());
-
-    httplib::SSLClient ncli("127.0.0.1", lcu.port);
-    ncli.enable_server_certificate_verification(false);
-
-    httplib::Headers headers = { { "Authorization", "Basic " + auth } };
-
-    auto nres = ncli.Get("/lol-summoner/v1/current-summoner", headers);
+    auto nres = lcu.get("/lol-summoner/v1/current-summoner");
 
     if (!nres) // if res is a nullptr
     {

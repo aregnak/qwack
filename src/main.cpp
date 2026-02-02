@@ -29,6 +29,7 @@
 
 #include "poll.h"
 #include "parser.h"
+#include "lcuClient.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -268,6 +269,8 @@ int main(int, char**)
 
     poll poller;
 
+    LCUClient lcuC(lcu);
+
     std::string playerName;
     lastPoll = std::chrono::steady_clock::now();
     while (playerName.empty())
@@ -277,7 +280,7 @@ int main(int, char**)
         // 2 second delaay to let the API start.
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 2000)
         {
-            playerName = poller.getPlayerName(lcu);
+            playerName = poller.getPlayerName(lcuC);
             lastPoll = now;
         }
     }

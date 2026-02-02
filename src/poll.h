@@ -5,9 +5,10 @@
 #include <string>
 #include <iostream>
 
-#include "parser.h"
 #include "httplib.h"
 #include "json.hpp"
+
+#include "lcuClient.h"
 
 class poll
 {
@@ -16,7 +17,7 @@ public:
 
     bool update(); // Live Client Data API
 
-    std::string getPlayerName(const LCUInfo&);
+    std::string getPlayerName(LCUClient&);
 
     float getGameTime();
     int getcs(const std::string& playerName);
