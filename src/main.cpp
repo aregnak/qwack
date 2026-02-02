@@ -287,10 +287,6 @@ int main(int, char**)
     }
     LCU_LOG("Summoner found: " << playerName);
 
-    // If there is less or more than 10, we have a problem.
-    std::vector<std::string> puuids(10);
-    std::vector<PlayerInfo> players(10);
-
     float gameTime = 0.0f;
 
     float csPerMin = -1.0f;
@@ -307,30 +303,32 @@ int main(int, char**)
     bool running = true;
     SDL_Event event;
 
+    auto rnow = std::chrono::steady_clock::now();
+
+    // If there is less or more than 10, we have a problem.
+    std::vector<std::string> puuids(10);
     puuids = poller.getPUUIDs(lcuC);
 
-    std::vector<std::future<PlayerInfo>> futures;
-
-    for (const auto& puuid : puuids)
+    std::vector<PlayerInfo> players(10);
     {
-        futures.push_back(std::async(std::launch::async,
-                                     [&poller, &lcuC, puuid]
-                                     {
-                                         PlayerInfo p;
-                                         p.puuid = puuid;
-                                         p.riotID = poller.getPlayerName(lcuC, puuid);
-                                         p.rank = poller.getPlayerRank(lcuC, puuid);
-                                         return p;
-                                     }));
-    }
+        std::vector<std::thread> threads;
 
-    for (size_t i = 0; i < futures.size(); i++)
-    {
-        players[i] = futures[i].get();
+        for (size_t i = 0; i < puuids.size(); i++)
+        {
+            threads.emplace_back(
+                [&, i]()
+                {
+                    players[i].puuid = puuids[i];
+                    players[i].riotID = poller.getPlayerName(lcuC, puuids[i]);
+                    players[i].rank = poller.getPlayerRank(lcuC, puuids[i]);
+                });
+        }
 
-        // players[i].puuid = puuids[i];
-        // players[i].riotID = poller.getPlayerName(lcuC, puuids[i]);
-        // players[i].rank = poller.getPlayerRank(lcuC, puuids[i]);
+        for (auto& t : threads)
+        {
+            if (t.joinable())
+                t.join();
+        }
     }
 
     for (auto& p : players)
@@ -338,6 +336,10 @@ int main(int, char**)
         std::cout << "Player: \npuuid: " << p.puuid << " riotID: " << p.riotID
                   << " rank: " << p.rank << std::endl;
     }
+
+    auto later = std::chrono::steady_clock::now();
+
+    std::cout << "Time it took to fetch allat: " << later - rnow << std::endl;
 
     std::cout << "At running loop." << std::endl;
     while (running)
