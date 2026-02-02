@@ -309,13 +309,18 @@ int main(int, char**)
 
     for (size_t i = 0; i < players.size(); i++)
     {
+        // PlayerInfo player = players[i];
+        // std::string puuid = puuids[i];
+
         players[i].puuid = puuids[i];
         players[i].riotID = poller.getPlayerName(lcuC, puuids[i]);
+        players[i].rank = poller.getPlayerRank(lcuC, puuids[i]);
     }
 
     for (auto& p : players)
     {
-        std::cout << "Player: \npuuid: " << p.puuid << "riotID: " << p.riotID << std::endl;
+        // std::cout << "Player: \npuuid: " << p.puuid << " riotID: " << p.riotID
+        //           << " rank: " << p.rank << std::endl;
     }
 
     std::cout << "At running loop." << std::endl;

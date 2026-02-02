@@ -28,32 +28,6 @@ bool poll::update()
 
     return true;
 }
-std::string poll::getPlayerName(LCUClient& lcu, std::string puuid)
-{
-    auto nres = lcu.get("/lol-summoner/v2/summoners/puuid/" + puuid);
-
-    if (!nres) // if res is a nullptr
-    {
-        std::cout << "Failed to get name." << std::endl;
-        return "";
-    }
-
-    if (nres->status != 200)
-    {
-        return "";
-    }
-
-    auto name = json::parse(nres->body);
-    if (name.is_discarded())
-    {
-        return "";
-    }
-
-    std::stringstream nstream;
-    nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
-
-    return nstream.str();
-}
 
 std::string poll::getCurrentSummoner(LCUClient& lcu)
 {
@@ -106,10 +80,67 @@ std::vector<std::string> poll::getPUUIDs(LCUClient& lcu)
     for (auto& p : session["gameData"]["playerChampionSelections"])
     {
         puuids.push_back(p["puuid"]);
-        std::cout << p << std::endl;
+        // std::cout << p["puuid"] << std::endl;
     }
 
     return puuids;
+}
+
+std::string poll::getPlayerName(LCUClient& lcu, std::string puuid)
+{
+    auto nres = lcu.get("/lol-summoner/v2/summoners/puuid/" + puuid);
+
+    if (!nres) // if res is a nullptr
+    {
+        std::cout << "Failed to get name." << std::endl;
+        return "";
+    }
+
+    if (nres->status != 200)
+    {
+        return "";
+    }
+
+    auto name = json::parse(nres->body);
+    if (name.is_discarded())
+    {
+        return "";
+    }
+
+    std::stringstream nstream;
+    nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
+
+    return nstream.str();
+}
+
+std::string poll::getPlayerRank(LCUClient& lcu, std::string puuid)
+{
+    auto nres = lcu.get("/lol-ranked/v1/ranked-stats/" + puuid);
+
+    if (!nres) // if res is a nullptr
+    {
+        return "";
+    }
+
+    if (nres->status != 200)
+    {
+        return "";
+    }
+
+    auto rank = json::parse(nres->body);
+    if (rank.is_discarded())
+    {
+        return "";
+    }
+
+    if (rank.contains("queueMap") && rank["queueMap"].contains("RANKED_SOLO_5x5"))
+    {
+        auto& solo = rank["queueMap"]["RANKED_SOLO_5x5"];
+        std::stringstream rstream;
+        rstream << solo["tier"] << " " << solo["division"];
+        return rstream.str();
+    }
+    return "";
 }
 
 float poll::getGameTime()
