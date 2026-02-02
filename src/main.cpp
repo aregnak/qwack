@@ -344,6 +344,14 @@ int main(int, char**)
                   << " role: " << p.role << " team: " << p.team << std::endl;
     }
 
+    sortPlayers(players);
+
+    for (auto& p : players)
+    {
+        std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
+                  << " role: " << p.role << " team: " << p.team << std::endl;
+    }
+
     auto later = std::chrono::steady_clock::now();
 
     std::cout << "Time it took to fetch allat: "
