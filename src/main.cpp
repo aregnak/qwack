@@ -401,24 +401,44 @@ int main(int, char**)
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        // Overlay UI
-        ImGui::SetNextWindowBgAlpha(0.4f);
-        ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
-        ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
-        ImGui::Begin("NULL", nullptr,
-                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                         ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
-                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing);
+        // Main settings overlay (WIP)
+        {
+            // ImGui::SetNextWindowBgAlpha(0.4f);
+            // ImGui::SetNextWindowPos(ImVec2(screenWidth / 2, screenHeight / 2), ImGuiCond_Always);
+            // ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Always);
 
-        if (csPerMin < 0.0f)
-        {
-            ImGui::Text("Waiting for game.");
+            // ImGui::Begin("Test", nullptr);
+            // //  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            // //      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+            // //      ImGuiWindowFlags_NoSavedSettings |
+            // //      ImGuiWindowFlags_NoFocusOnAppearing);
+
+            // ImGui::Text("Hello from another window!");
+            // ImGui::End();
         }
-        else
+
+        // CS/Min overlay
         {
-            ImGui::Text("CS/min: %.2f", csPerMin);
+            ImGui::SetNextWindowBgAlpha(0.4f);
+            ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
+            ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
+
+            ImGui::Begin("NULL", nullptr,
+                         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                             ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+                             ImGuiWindowFlags_NoSavedSettings |
+                             ImGuiWindowFlags_NoFocusOnAppearing);
+
+            if (csPerMin < 0.0f)
+            {
+                ImGui::Text("Waiting for game.");
+            }
+            else
+            {
+                ImGui::Text("CS/min: %.2f", csPerMin);
+            }
+            ImGui::End();
         }
-        ImGui::End();
 
         // Render
         ImGui::Render();
