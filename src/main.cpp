@@ -6,9 +6,7 @@
 #include <winuser.h>
 #include <d3d11.h>
 #include <iostream>
-#include <fstream>
 #include <string>
-#include <vector>
 #include <chrono>
 // #include <dxgi1_2.h>
 
