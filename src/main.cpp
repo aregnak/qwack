@@ -186,21 +186,6 @@ int main(int, char**)
         SDL_Log("SDL_CreateWindow Error: %s", SDL_GetError());
         return 1;
     }
-    // SDL_SetWindowOpacity(window, 1.0f);
-
-    // SDL_SetWindowOpacity(window, 0.5f);
-
-    // SDL2: get native HWND using SDL_SysWMinfo
-    // SDL_SysWMinfo wmInfo;
-    // SDL_VERSION(&wmInfo.version);
-    // if (!SDL_GetWindowWMInfo(window, &wmInfo))
-    // {
-    //     SDL_Log("SDL_GetWindowWMInfo failed: %s", SDL_GetError());
-    //     return 1;
-    // }
-    // HWND hwnd = wmInfo.info.win.window;
-
-    // // Make window click-through (transparent to mouse)
 
     SDL_PropertiesID props = SDL_GetWindowProperties(window);
     HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
@@ -233,25 +218,24 @@ int main(int, char**)
 
     // CS/min screen. Static until I add dynamic placement.
     ImVec2 cspmSize = ImVec2(120, 30);
-    ImVec2 cspmPos =
-        ImVec2((screenWidth - (cspmSize.x * 1.2)), (screenHeight / 2) - (screenHeight / 10));
-    std::cout << "pos: " << cspmPos.x << " " << cspmPos.y << std::endl;
+    ImVec2 cspmPos = ImVec2((screenWidth - (cspmSize.x * 1.2)), screenHeight / 2.5);
+    std::cout << "CS/Min overlay pos: " << cspmPos.x << " " << cspmPos.y << std::endl;
 
-    // 600x320 area
-    // ImVec2 rankSize = ImVec2(30, 30);
-    // std::vector<ImVec2> rankPoss(10);
+    ImVec2 rankSize = ImVec2(30, 30);
+    std::vector<ImVec2> rankPoss(10);
 
-    // for (int i = 0; i < rankPoss.size(); i++)
-    // {
-    //     if (i < 5)
-    //     {
-    //         rankPoss[i] = ImVec2(screenWidth / 5.5f, screenHeight / 3.3f + (i * 80));
-    //     }
-    //     else
-    //     {
-    //         rankPoss[i] = ImVec2(screenWidth / 1.25f, screenHeight / 3.3f + ((i - 5) * 80));
-    //     }
-    // }
+    for (int i = 0; i < rankPoss.size(); i++)
+    {
+        // Order team ranks
+        if (i < 5)
+        {
+            rankPoss[i] = ImVec2(screenWidth / 5.5f, screenHeight / 3.3f + (i * 80));
+        }
+        else // Chaos team ranks
+        {
+            rankPoss[i] = ImVec2(screenWidth / 1.25f, screenHeight / 3.3f + ((i - 5) * 80));
+        }
+    }
 
     LCUInfo lcu;
     auto lastPoll = std::chrono::steady_clock::now();
@@ -271,13 +255,10 @@ int main(int, char**)
                 if (pollCounter % 30 == 0 && pollCounter < 180)
                 {
                     delayS += 10;
-                    std::cout << "current delay " << delayS << std::endl;
                 }
-                std::cout << "poll counter: " << pollCounter << std::endl;
 
                 std::cout << "Waiting for League client (open it...)" << std::endl;
 
-                // Poll.
                 lcu = parseLockfile();
                 lastPoll = now;
                 pollCounter++;
@@ -304,7 +285,8 @@ int main(int, char**)
     }
     LCU_LOG("Summoner found: " << playerName);
 
-    auto rnow = std::chrono::steady_clock::now();
+    // Used to measure how long player info polling takes.
+    auto start = std::chrono::steady_clock::now();
 
     // If there is less or more than 10, we have a problem.
     std::vector<std::string> puuids(10);
@@ -352,10 +334,10 @@ int main(int, char**)
                   << " role: " << p.role << " team: " << p.team << std::endl;
     }
 
-    auto later = std::chrono::steady_clock::now();
+    auto finish = std::chrono::steady_clock::now();
 
     std::cout << "Time it took to fetch allat: "
-              << std::chrono::duration<double>(later - rnow).count() << "s" << std::endl;
+              << std::chrono::duration<double>(finish - start).count() << "s" << std::endl;
 
     bool hidden = false;
 
@@ -364,6 +346,7 @@ int main(int, char**)
     std::atomic<float> gameTime = 0.0f;
     std::atomic<bool> running = true;
 
+    // Polling thread.
     std::thread lcuThread(
         [&]()
         {
@@ -375,13 +358,6 @@ int main(int, char**)
 
             while (running)
             {
-                // if (poller.update())
-                // {
-                // }
-
-                // auto now = std::chrono::steady_clock::now();
-                // if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 500)
-                // {
                 if (poller.update())
                 {
                     currentCS = poller.getcs(playerName);
@@ -410,7 +386,7 @@ int main(int, char**)
                         totalCS = estimatedCS + currentCS;
 
                         // This is really just to make it a slight bit more accurate in case
-                        // something triggers a lot of "additional cs" but in reality it is something else.
+                        // something triggers a lot of additional "cs" but in reality it is something else.
                         if (totalCS - currentCS > 10)
                         {
                             estimatedCS--;
@@ -419,8 +395,7 @@ int main(int, char**)
                     }
                     // The cs/min counter will always be an approximation because the API updates the number
                     // every 10 cs, this algorithm will somewhat smoothen that out, but any
-                    // csPerMin = totalCS / (gameTime / 60.0f);
-                    // lastPoll = now;
+
                     currentGold.store(gold, std::memory_order_relaxed);
                     gameTime.store(time, std::memory_order_relaxed);
                 }
@@ -429,12 +404,11 @@ int main(int, char**)
                     csPerMin = -1.0f;
                 }
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                // }
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
             }
         });
 
-    // Main loop.
+    // Main thread.
     SDL_Event event;
     while (running)
     {
@@ -461,7 +435,6 @@ int main(int, char**)
             {
                 SDL_ShowWindow(window);
                 hidden = false;
-                // LCU_LOG("shown: " << hidden);
             }
         }
         else
@@ -470,7 +443,6 @@ int main(int, char**)
             {
                 SDL_HideWindow(window);
                 hidden = true;
-                // LCU_LOG("hidden: " << hidden);
             }
         }
 
@@ -530,21 +502,21 @@ int main(int, char**)
 
         // Ranks overlay
         {
-            // int num = 0;
-            // for (auto& pos : rankPoss)
-            // {
-            //     ImGui::SetNextWindowBgAlpha(0.4f);
-            //     ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-            //     ImGui::SetNextWindowSize(rankSize, ImGuiCond_Always);
-            //     ImGui::Begin(("RankedWindow##" + std::to_string(num++)).c_str(), nullptr,
-            //                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-            //                      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
-            //                      ImGuiWindowFlags_NoSavedSettings |
-            //                      ImGuiWindowFlags_NoFocusOnAppearing);
+            int num = 0;
+            for (auto& pos : rankPoss)
+            {
+                ImGui::SetNextWindowBgAlpha(0.4f);
+                ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+                ImGui::SetNextWindowSize(rankSize, ImGuiCond_Always);
+                ImGui::Begin(("RankedWindow##" + std::to_string(num++)).c_str(), nullptr,
+                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoFocusOnAppearing);
 
-            //     ImGui::Text("B1");
-            //     ImGui::End();
-            // }
+                ImGui::Text("B1");
+                ImGui::End();
+            }
         }
 
         // Render

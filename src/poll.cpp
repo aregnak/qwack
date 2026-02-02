@@ -1,6 +1,4 @@
 #include "poll.h"
-#include "lcuClient.h"
-#include "playerInfo.h"
 
 using json = nlohmann::json;
 
@@ -81,7 +79,6 @@ std::vector<std::string> poll::getPUUIDs(LCUClient& lcu)
     for (auto& p : session["gameData"]["playerChampionSelections"])
     {
         puuids.push_back(p["puuid"]);
-        // std::cout << p["puuid"] << std::endl;
     }
 
     return puuids;
@@ -160,20 +157,6 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player, std::string riotID)
     }
 }
 
-// std::string poll::getPlayerTeam()
-// {
-//     auto body = loadJsonFile("./allgamedata.json");
-
-//     auto j = json::parse(body, nullptr, false);
-//     for (auto& p : j["allPlayers"])
-//     {
-//         if (p["summonerName"].get<std::string>() == playerName)
-//         {
-//             cs = p["scores"]["creepScore"];
-//         }
-//     }
-// }
-
 float poll::getGameTime()
 {
     auto j = json::parse(res->body);
@@ -222,17 +205,3 @@ float poll::getGold()
 
     return gold;
 }
-
-// void getPlayerGameInfo(StaticPlayer& player)
-// {
-//     // auto res = lcu.get("/lol-gameflow/v1/session");
-
-//     // auto session = json::parse(res->body);
-//     auto body = loadJsonFile("./allgamedata.json");
-
-//     auto j = json::parse(body, nullptr, false);
-
-//     player.riotID =
-
-//     //
-// }
