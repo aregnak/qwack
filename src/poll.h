@@ -9,6 +9,7 @@
 #include "json.hpp"
 
 #include "lcuClient.h"
+#include "playerInfo.h"
 
 class poll
 {
@@ -22,10 +23,13 @@ public:
     std::vector<std::string> getPUUIDs(LCUClient&);
     std::string getPlayerName(LCUClient&, std::string);
     std::string getPlayerRank(LCUClient&, std::string);
+    void getPlayerRoleAndTeam(PlayerInfo&, std::string);
 
     float getGameTime();
     int getcs(const std::string&);
     float getGold();
+
+    // void getPlayerGameInfo(StaticPlayer&);
 
 private:
     httplib::SSLClient cli;

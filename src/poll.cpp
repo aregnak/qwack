@@ -1,5 +1,6 @@
 #include "poll.h"
 #include "lcuClient.h"
+#include "playerInfo.h"
 
 using json = nlohmann::json;
 
@@ -67,7 +68,7 @@ std::string loadJsonFile(const std::string& path)
 std::vector<std::string> poll::getPUUIDs(LCUClient& lcu)
 {
     // auto res = lcu.get("/lol-gameflow/v1/session");
-    auto body = loadJsonFile("./session.json");
+    auto body = loadJsonFile("./session2.json");
 
     // auto session = json::parse(res->body);
     auto session = json::parse(body, nullptr, false);
@@ -143,6 +144,36 @@ std::string poll::getPlayerRank(LCUClient& lcu, std::string puuid)
     return "";
 }
 
+void poll::getPlayerRoleAndTeam(PlayerInfo& player, std::string riotID)
+{
+    auto body = loadJsonFile("./allgamedata2.json");
+
+    auto j = json::parse(body, nullptr, false);
+
+    for (auto& j : j["allPlayers"])
+    {
+        if (j["riotId"].get<std::string>() == riotID)
+        {
+            player.role = j["position"];
+            player.team = j["team"];
+        }
+    }
+}
+
+// std::string poll::getPlayerTeam()
+// {
+//     auto body = loadJsonFile("./allgamedata.json");
+
+//     auto j = json::parse(body, nullptr, false);
+//     for (auto& p : j["allPlayers"])
+//     {
+//         if (p["summonerName"].get<std::string>() == playerName)
+//         {
+//             cs = p["scores"]["creepScore"];
+//         }
+//     }
+// }
+
 float poll::getGameTime()
 {
     auto j = json::parse(res->body);
@@ -191,3 +222,17 @@ float poll::getGold()
 
     return gold;
 }
+
+// void getPlayerGameInfo(StaticPlayer& player)
+// {
+//     // auto res = lcu.get("/lol-gameflow/v1/session");
+
+//     // auto session = json::parse(res->body);
+//     auto body = loadJsonFile("./allgamedata.json");
+
+//     auto j = json::parse(body, nullptr, false);
+
+//     player.riotID =
+
+//     //
+// }

@@ -310,6 +310,10 @@ int main(int, char**)
     std::vector<std::string> puuids(10);
     puuids = poller.getPUUIDs(lcuC);
 
+    // Unfortunately my understanding of the LCU API led me here,
+    // to get players' ranks, we need the puuid, but to get their in game
+    // stats, we need the live API (yes, different).
+    // this code is very messy for now.
     std::vector<PlayerInfo> players(10);
     {
         std::vector<std::thread> threads;
@@ -335,8 +339,9 @@ int main(int, char**)
 
     for (auto& p : players)
     {
-        std::cout << "Player: \npuuid: " << p.puuid << " riotID: " << p.riotID
-                  << " rank: " << p.rank << std::endl;
+        poller.getPlayerRoleAndTeam(p, p.riotID);
+        std::cout << "Player:" << " riotID: " << p.riotID << " rank: " << p.rank
+                  << " role: " << p.role << " team: " << p.team << std::endl;
     }
 
     auto later = std::chrono::steady_clock::now();
@@ -498,7 +503,7 @@ int main(int, char**)
             ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
             ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
 
-            ImGui::Begin("NULL", nullptr,
+            ImGui::Begin("cspm", nullptr,
                          ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                              ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
                              ImGuiWindowFlags_NoSavedSettings |
