@@ -17,10 +17,12 @@ public:
 
     bool update(); // Live Client Data API
 
-    std::string getPlayerName(LCUClient&);
+    std::string getCurrentSummoner(LCUClient&);
+    std::string getPlayerName(LCUClient&, std::string);
+    std::vector<std::string> getPUUIDs(LCUClient&);
 
     float getGameTime();
-    int getcs(const std::string& playerName);
+    int getcs(const std::string&);
     float getGold();
 
 private:

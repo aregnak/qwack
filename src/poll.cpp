@@ -1,4 +1,5 @@
 #include "poll.h"
+#include "lcuClient.h"
 
 using json = nlohmann::json;
 
@@ -27,8 +28,34 @@ bool poll::update()
 
     return true;
 }
+std::string poll::getPlayerName(LCUClient& lcu, std::string puuid)
+{
+    auto nres = lcu.get("/lol-summoner/v2/summoners/puuid/" + puuid);
 
-std::string poll::getPlayerName(LCUClient& lcu)
+    if (!nres) // if res is a nullptr
+    {
+        std::cout << "Failed to get name." << std::endl;
+        return "";
+    }
+
+    if (nres->status != 200)
+    {
+        return "";
+    }
+
+    auto name = json::parse(nres->body);
+    if (name.is_discarded())
+    {
+        return "";
+    }
+
+    std::stringstream nstream;
+    nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
+
+    return nstream.str();
+}
+
+std::string poll::getCurrentSummoner(LCUClient& lcu)
 {
     auto nres = lcu.get("/lol-summoner/v1/current-summoner");
 
@@ -53,6 +80,36 @@ std::string poll::getPlayerName(LCUClient& lcu)
     nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
 
     return nstream.str();
+}
+
+std::string loadJsonFile(const std::string& path)
+{
+    std::ifstream f(path);
+    std::stringstream ss;
+    ss << f.rdbuf();
+    return ss.str();
+}
+
+std::vector<std::string> poll::getPUUIDs(LCUClient& lcu)
+{
+    // auto res = lcu.get("/lol-gameflow/v1/session");
+    auto body = loadJsonFile("./session.json");
+
+    // auto session = json::parse(res->body);
+    auto session = json::parse(body, nullptr, false);
+    if (session.is_discarded())
+    {
+        return std::vector<std::string>();
+    }
+
+    std::vector<std::string> puuids;
+    for (auto& p : session["gameData"]["playerChampionSelections"])
+    {
+        puuids.push_back(p["puuid"]);
+        std::cout << p << std::endl;
+    }
+
+    return puuids;
 }
 
 float poll::getGameTime()

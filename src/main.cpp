@@ -28,6 +28,7 @@
 #include "poll.h"
 #include "parser.h"
 #include "lcuClient.h"
+#include "playerInfo.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -278,11 +279,15 @@ int main(int, char**)
         // 2 second delaay to let the API start.
         if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 2000)
         {
-            playerName = poller.getPlayerName(lcuC);
+            playerName = poller.getCurrentSummoner(lcuC);
             lastPoll = now;
         }
     }
     LCU_LOG("Summoner found: " << playerName);
+
+    // If there is less or more than 10, we have a problem.
+    std::vector<std::string> puuids(10);
+    std::vector<PlayerInfo> players(10);
 
     float gameTime = 0.0f;
 
@@ -300,6 +305,20 @@ int main(int, char**)
     bool running = true;
     SDL_Event event;
 
+    puuids = poller.getPUUIDs(lcuC);
+
+    for (size_t i = 0; i < players.size(); i++)
+    {
+        players[i].puuid = puuids[i];
+        players[i].riotID = poller.getPlayerName(lcuC, puuids[i]);
+    }
+
+    for (auto& p : players)
+    {
+        std::cout << "Player: \npuuid: " << p.puuid << "riotID: " << p.riotID << std::endl;
+    }
+
+    std::cout << "At running loop." << std::endl;
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -326,6 +345,19 @@ int main(int, char**)
         {
             if (poller.update())
             {
+                if (puuids.empty())
+                {
+                    // std::cout << "Fetching PUUIDs..." << std::endl;
+
+                    // if (!puuids.empty())
+                    // {
+                    //     for (auto& p : puuids)
+                    //     {
+                    //         std::cout << "\nPlayer PUUIDs: \n" << p << std::endl;
+                    //     }
+                    // }
+                }
+
                 currentCS = poller.getcs(playerName);
 
                 gameTime = poller.getGameTime();
