@@ -10,6 +10,7 @@
 #include <chrono>
 #include <algorithm>
 #include <future>
+#include <atomic>
 // #include <dxgi1_2.h>
 
 #include <SDL.h>
@@ -287,22 +288,6 @@ int main(int, char**)
     }
     LCU_LOG("Summoner found: " << playerName);
 
-    float gameTime = 0.0f;
-
-    float csPerMin = -1.0f;
-    int currentCS = 0;
-    int lastCS = 0;
-    int estimatedCS = 0;
-    int totalCS = 0;
-
-    float currentGold = 500.0f;
-    float lastGold = 500.0f;
-
-    bool hidden = false;
-
-    bool running = true;
-    SDL_Event event;
-
     auto rnow = std::chrono::steady_clock::now();
 
     // If there is less or more than 10, we have a problem.
@@ -329,6 +314,7 @@ int main(int, char**)
             if (t.joinable())
                 t.join();
         }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     for (auto& p : players)
@@ -341,7 +327,85 @@ int main(int, char**)
 
     std::cout << "Time it took to fetch allat: " << later - rnow << std::endl;
 
-    std::cout << "At running loop." << std::endl;
+    bool hidden = false;
+
+    std::atomic<float> csPerMin = -1.0f;
+    std::atomic<float> currentGold = 500.0f;
+    std::atomic<float> gameTime = 0.0f;
+    std::atomic<bool> running = true;
+
+    std::thread lcuThread(
+        [&]()
+        {
+            int currentCS = 0;
+            int lastCS = 0;
+            int estimatedCS = 0;
+            int totalCS = 0;
+            float lastGold = 500.0f;
+
+            while (running)
+            {
+                // if (poller.update())
+                // {
+                // }
+
+                // auto now = std::chrono::steady_clock::now();
+                // if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 500)
+                // {
+                if (poller.update())
+                {
+                    currentCS = poller.getcs(playerName);
+                    float gold = poller.getGold();
+                    float time = poller.getGameTime();
+
+                    // Minons spawn after 30 seconds, no need to measure anything before that.
+                    if (gameTime >= 30)
+                    {
+                        // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
+                        if (lastCS == currentCS)
+                        {
+                            if (currentGold - lastGold > 14)
+                            {
+                                estimatedCS++;
+                            }
+                            // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
+                            lastGold = currentGold;
+                        }
+                        else
+                        {
+                            lastCS = currentCS;
+                            estimatedCS = 0;
+                        }
+
+                        totalCS = estimatedCS + currentCS;
+
+                        // This is really just to make it a slight bit more accurate in case
+                        // something triggers a lot of "additional cs" but in reality it is something else.
+                        if (totalCS - currentCS > 10)
+                        {
+                            estimatedCS--;
+                        }
+                        csPerMin.store(totalCS / (gameTime / 60.0f), std::memory_order_relaxed);
+                    }
+                    // The cs/min counter will always be an approximation because the API updates the number
+                    // every 10 cs, this algorithm will somewhat smoothen that out, but any
+                    // csPerMin = totalCS / (gameTime / 60.0f);
+                    // lastPoll = now;
+                    currentGold.store(gold, std::memory_order_relaxed);
+                    gameTime.store(time, std::memory_order_relaxed);
+                }
+                else
+                {
+                    csPerMin = -1.0f;
+                }
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                // }
+            }
+        });
+
+    // Main loop.
+    SDL_Event event;
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -357,71 +421,9 @@ int main(int, char**)
                 running = false;
             }
         }
-
-        if (poller.update())
-        {
-            currentGold = poller.getGold();
-        }
-
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 500)
-        {
-            if (poller.update())
-            {
-                if (puuids.empty())
-                {
-                    // std::cout << "Fetching PUUIDs..." << std::endl;
-
-                    // if (!puuids.empty())
-                    // {
-                    //     for (auto& p : puuids)
-                    //     {
-                    //         std::cout << "\nPlayer PUUIDs: \n" << p << std::endl;
-                    //     }
-                    // }
-                }
-
-                currentCS = poller.getcs(playerName);
-
-                gameTime = poller.getGameTime();
-                // Minons spawn after 30 seconds, no need to measure anything before that.
-                if (gameTime >= 30)
-                {
-                    // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
-                    if (lastCS == currentCS)
-                    {
-                        if (currentGold - lastGold > 14)
-                        {
-                            estimatedCS++;
-                        }
-                        // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
-                        lastGold = currentGold;
-                    }
-                    else
-                    {
-                        lastCS = currentCS;
-                        estimatedCS = 0;
-                    }
-
-                    totalCS = estimatedCS + currentCS;
-
-                    // This is really just to make it a slight bit more accurate in case
-                    // something triggers a lot of "additional cs" but in reality it is something else.
-                    if (totalCS - currentCS > 10)
-                    {
-                        estimatedCS--;
-                    }
-                }
-                // The cs/min counter will always be an approximation because the API updates the number
-                // every 10 cs, this algorithm will somewhat smoothen that out, but any
-                csPerMin = totalCS / (gameTime / 60.0f);
-                lastPoll = now;
-            }
-            else
-            {
-                csPerMin = -1.0f;
-            }
-        }
+        float csDisplay = csPerMin.load();
+        float goldDisplay = currentGold.load();
+        float timeDisplay = gameTime.load();
 
         if (isLeagueFocused())
         {
@@ -491,7 +493,7 @@ int main(int, char**)
             }
             else
             {
-                ImGui::Text("CS/min: %.2f", csPerMin);
+                ImGui::Text("CS/min: %.2f", csDisplay);
             }
             ImGui::End();
         }
@@ -506,6 +508,12 @@ int main(int, char**)
     }
 
     // Cleanup
+    running = false;
+    if (lcuThread.joinable())
+    {
+        lcuThread.join();
+    }
+
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
