@@ -237,6 +237,22 @@ int main(int, char**)
         ImVec2((screenWidth - (cspmSize.x * 1.2)), (screenHeight / 2) - (screenHeight / 10));
     std::cout << "pos: " << cspmPos.x << " " << cspmPos.y << std::endl;
 
+    // 600x320 area
+    // ImVec2 rankSize = ImVec2(30, 30);
+    // std::vector<ImVec2> rankPoss(10);
+
+    // for (int i = 0; i < rankPoss.size(); i++)
+    // {
+    //     if (i < 5)
+    //     {
+    //         rankPoss[i] = ImVec2(screenWidth / 5.5f, screenHeight / 3.3f + (i * 80));
+    //     }
+    //     else
+    //     {
+    //         rankPoss[i] = ImVec2(screenWidth / 1.25f, screenHeight / 3.3f + ((i - 5) * 80));
+    //     }
+    // }
+
     LCUInfo lcu;
     auto lastPoll = std::chrono::steady_clock::now();
 
@@ -325,7 +341,8 @@ int main(int, char**)
 
     auto later = std::chrono::steady_clock::now();
 
-    std::cout << "Time it took to fetch allat: " << later - rnow << std::endl;
+    std::cout << "Time it took to fetch allat: "
+              << std::chrono::duration<double>(later - rnow).count() << "s" << std::endl;
 
     bool hidden = false;
 
@@ -475,9 +492,9 @@ int main(int, char**)
             // ImGui::End();
         }
 
+        ImGui::SetNextWindowBgAlpha(0.4f);
         // CS/Min overlay
         {
-            ImGui::SetNextWindowBgAlpha(0.4f);
             ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
             ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
 
@@ -496,6 +513,25 @@ int main(int, char**)
                 ImGui::Text("CS/min: %.2f", csDisplay);
             }
             ImGui::End();
+        }
+
+        // Ranks overlay
+        {
+            // int num = 0;
+            // for (auto& pos : rankPoss)
+            // {
+            //     ImGui::SetNextWindowBgAlpha(0.4f);
+            //     ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+            //     ImGui::SetNextWindowSize(rankSize, ImGuiCond_Always);
+            //     ImGui::Begin(("RankedWindow##" + std::to_string(num++)).c_str(), nullptr,
+            //                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+            //                      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+            //                      ImGuiWindowFlags_NoSavedSettings |
+            //                      ImGuiWindowFlags_NoFocusOnAppearing);
+
+            //     ImGui::Text("B1");
+            //     ImGui::End();
+            // }
         }
 
         // Render
