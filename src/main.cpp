@@ -286,88 +286,17 @@ int main(int, char**)
     }
     LCU_LOG("Summoner found: " << playerName);
 
-    // Used to measure how long player info polling takes.
-    auto start = std::chrono::steady_clock::now();
-
-    // If there is less or more than 10, we have a problem.
-    std::vector<std::string> puuids(10);
-    puuids = poller.getPUUIDs(lcuC);
-
-    // Unfortunately my understanding of the LCU API led me here,
-    // to get players' ranks, we need the puuid, but to get their in game
-    // stats, we need the live API (yes, different).
-    // this code is very messy for now.
-    std::vector<PlayerInfo> players(10);
-    {
-        std::vector<std::thread> threads;
-
-        for (size_t i = 0; i < puuids.size(); i++)
-        {
-            threads.emplace_back(
-                [&, i]()
-                {
-                    players[i].puuid = puuids[i];
-                    players[i].riotID = poller.getPlayerName(lcuC, puuids[i]);
-                    players[i].rank = poller.getPlayerRank(lcuC, puuids[i]);
-                });
-        }
-
-        for (auto& t : threads)
-        {
-            if (t.joinable())
-                t.join();
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-
-    for (auto& p : players)
-    {
-        poller.getPlayerRoleAndTeam(p, p.riotID);
-        // std::cout << "Player:" << " riotID: " << p.riotID << " rank: " << p.rank
-        //           << " role: " << p.role << " team: " << p.team << std::endl;
-    }
-
-    // TODO: merge the ranks into sortPlayers
-    sortPlayers(players);
-
-    std::vector<std::string> ranks;
-
-    for (auto& p : players)
-    {
-        char rankLetter = p.rank[0];
-        int tierNumber = romanToInt(p.rank.substr(p.rank.find(' ') + 1));
-
-        if (tierNumber != -1)
-        {
-            std::ostringstream oss;
-            oss << rankLetter << tierNumber;
-            ranks.push_back(oss.str());
-        }
-        else
-        {
-            ranks.push_back("");
-        }
-        // std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
-        //           << " role: " << p.role << " team: " << p.team << std::endl;
-    }
-
-    for (auto& i : ranks)
-    {
-        std::cout << "Rank: " << i << std::endl;
-    }
-
-    auto finish = std::chrono::steady_clock::now();
-
-    std::cout << "Time it took to fetch allat: "
-              << std::chrono::duration<double>(finish - start).count() << "s" << std::endl;
-
-    bool hidden = false;
+    bool windowHidden = false;
     bool showRanks = false;
 
     std::atomic<float> csPerMin = -1.0f;
     std::atomic<float> currentGold = 500.0f;
     std::atomic<float> gameTime = 0.0f;
     std::atomic<bool> running = true;
+    bool practicetool = false;
+    bool playersLoaded = false;
+    std::vector<std::string> puuids(10);
+    std::vector<std::string> ranks;
 
     // Polling thread.
     std::thread lcuThread(
@@ -379,55 +308,128 @@ int main(int, char**)
             int totalCS = 0;
             float lastGold = 500.0f;
 
-            while (running)
+            try
             {
-                if (poller.update())
+                while (running)
                 {
-                    currentCS = poller.getcs(playerName);
-                    float gold = poller.getGold();
-                    float time = poller.getGameTime();
-
-                    // Minons spawn after 30 seconds, no need to measure anything before that.
-                    if (gameTime >= 30)
+                    if (poller.update())
                     {
-                        // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
-                        if (lastCS == currentCS)
+                        if (!playersLoaded)
                         {
-                            if (currentGold - lastGold > 14)
+                            LCU_LOG("Polling Player Info...");
+                            // If there is less or more than 10, we have a problem.
+                            puuids = poller.getPUUIDs(lcuC);
+
+                            // Unfortunately my understanding of the LCU API led me here,
+                            // to get players' ranks, we need the puuid, but to get their in game
+                            // stats, we need the live API (yes, different).
+                            // this code is very messy for now.
+                            if (!puuids.empty())
                             {
-                                estimatedCS++;
+                                std::vector<PlayerInfo> players;
+
+                                for (size_t i = 0; i < puuids.size(); i++)
+                                {
+                                    PlayerInfo player;
+                                    player.puuid = puuids[i];
+                                    player.riotID = poller.getPlayerName(lcuC, puuids[i]);
+
+                                    player.rank = poller.getPlayerRank(lcuC, puuids[i]);
+                                    players.push_back(player);
+                                }
+
+                                for (auto& p : players)
+                                {
+                                    poller.getPlayerRoleAndTeam(p);
+                                }
+
+                                // TODO: merge the ranks into sortPlayers
+                                sortPlayers(players);
+
+                                for (auto& p : players)
+                                {
+                                    char rankLetter = p.rank[0];
+                                    int tierNumber =
+                                        romanToInt(p.rank.substr(p.rank.find(' ') + 1));
+
+                                    if (tierNumber != -1)
+                                    {
+                                        std::ostringstream oss;
+                                        oss << rankLetter << tierNumber;
+                                        ranks.push_back(oss.str());
+                                    }
+                                    else
+                                    {
+                                        ranks.push_back("");
+                                    }
+                                }
+                                LCU_LOG("Success");
                             }
-                            // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
-                            lastGold = currentGold;
-                        }
-                        else
-                        {
-                            lastCS = currentCS;
-                            estimatedCS = 0;
+                            else
+                            {
+                                practicetool = true;
+                                LCU_LOG("Gamemode is practice tool, skipping player info");
+                            }
+
+                            playersLoaded = true;
                         }
 
-                        totalCS = estimatedCS + currentCS;
+                        currentCS = poller.getcs(playerName);
+                        float gold = poller.getGold();
+                        float time = poller.getGameTime();
 
-                        // This is really just to make it a slight bit more accurate in case
-                        // something triggers a lot of additional "cs" but in reality it is something else.
-                        if (totalCS - currentCS > 10)
+                        // Minons spawn after 30 seconds, no need to measure anything before that.
+                        if (gameTime >= 30)
                         {
-                            estimatedCS--;
+                            // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
+                            if (lastCS == currentCS)
+                            {
+                                if (currentGold - lastGold > 14)
+                                {
+                                    estimatedCS++;
+                                }
+                                // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
+                                lastGold = currentGold;
+                            }
+                            else
+                            {
+                                lastCS = currentCS;
+                                estimatedCS = 0;
+                            }
+
+                            totalCS = estimatedCS + currentCS;
+
+                            // This is really just to make it a slight bit more accurate in case
+                            // something triggers a lot of additional "cs" but in reality it is something else.
+                            if (totalCS - currentCS > 10)
+                            {
+                                estimatedCS--;
+                            }
+                            csPerMin.store(totalCS / (gameTime / 60.0f), std::memory_order_relaxed);
                         }
-                        csPerMin.store(totalCS / (gameTime / 60.0f), std::memory_order_relaxed);
+                        // The cs/min counter will always be an approximation because the API updates the number
+                        // every 10 cs, this algorithm will somewhat smoothen that out, but any
+
+                        currentGold.store(gold, std::memory_order_relaxed);
+                        gameTime.store(time, std::memory_order_relaxed);
                     }
-                    // The cs/min counter will always be an approximation because the API updates the number
-                    // every 10 cs, this algorithm will somewhat smoothen that out, but any
+                    else
+                    {
+                        csPerMin = -1.0f;
+                    }
 
-                    currentGold.store(gold, std::memory_order_relaxed);
-                    gameTime.store(time, std::memory_order_relaxed);
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 }
-                else
-                {
-                    csPerMin = -1.0f;
-                }
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "[LCU THREAD EXCEPTION] " << e.what() << std::endl;
+                running = false;
+            }
+            catch (...)
+            {
+                std::cerr << "[LCU THREAD UNKNOWN EXCEPTION]" << std::endl;
+                running = false;
             }
         });
 
@@ -452,29 +454,37 @@ int main(int, char**)
         float goldDisplay = currentGold.load();
         float timeDisplay = gameTime.load();
 
-        if (IsTabDown())
+        if (killSwitch())
         {
-            showRanks = true;
+            running = false;
         }
-        else
+
+        if (!practicetool)
         {
-            showRanks = false;
+            if (!windowHidden && IsTabDown())
+            {
+                showRanks = true;
+            }
+            else
+            {
+                showRanks = false;
+            }
         }
 
         if (isLeagueFocused())
         {
-            if (hidden)
+            if (windowHidden)
             {
                 SDL_ShowWindow(window);
-                hidden = false;
+                windowHidden = false;
             }
         }
         else
         {
-            if (!hidden)
+            if (!windowHidden)
             {
                 SDL_HideWindow(window);
-                hidden = true;
+                windowHidden = true;
             }
         }
 
@@ -493,17 +503,13 @@ int main(int, char**)
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        // Main settings overlay (WIP)
+        // TODO: Main settings overlay
         {
             // ImGui::SetNextWindowBgAlpha(0.4f);
             // ImGui::SetNextWindowPos(ImVec2(screenWidth / 2, screenHeight / 2), ImGuiCond_Always);
             // ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Always);
 
             // ImGui::Begin("Test", nullptr);
-            // //  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-            // //      ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
-            // //      ImGuiWindowFlags_NoSavedSettings |
-            // //      ImGuiWindowFlags_NoFocusOnAppearing);
 
             // ImGui::Text("Hello from another window!");
             // ImGui::End();

@@ -65,23 +65,28 @@ std::string loadJsonFile(const std::string& path)
 
 std::vector<std::string> poll::getPUUIDs(LCUClient& lcu)
 {
-    // auto res = lcu.get("/lol-gameflow/v1/session");
-    auto body = loadJsonFile("./session2.json");
+    auto res = lcu.get("/lol-gameflow/v1/session");
+    // auto body = loadJsonFile("./session2.json");
 
-    // auto session = json::parse(res->body);
-    auto session = json::parse(body, nullptr, false);
+    auto session = json::parse(res->body);
+    // auto session = json::parse(body, nullptr, false);
     if (session.is_discarded())
     {
         return std::vector<std::string>();
     }
 
-    std::vector<std::string> puuids;
-    for (auto& p : session["gameData"]["playerChampionSelections"])
+    const std::string gameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
+    if (gameMode != "PRACTICETOOL")
     {
-        puuids.push_back(p["puuid"]);
-    }
+        std::vector<std::string> puuids;
+        for (auto& p : session["gameData"]["playerChampionSelections"])
+        {
+            puuids.push_back(p["puuid"]);
+        }
 
-    return puuids;
+        return puuids;
+    }
+    return std::vector<std::string>();
 }
 
 std::string poll::getPlayerName(LCUClient& lcu, std::string puuid)
@@ -141,15 +146,18 @@ std::string poll::getPlayerRank(LCUClient& lcu, std::string puuid)
     return "";
 }
 
-void poll::getPlayerRoleAndTeam(PlayerInfo& player, std::string riotID)
+void poll::getPlayerRoleAndTeam(PlayerInfo& player)
 {
-    auto body = loadJsonFile("./allgamedata2.json");
+    res = cli.Get("/liveclientdata/allgamedata");
 
-    auto j = json::parse(body, nullptr, false);
+    auto j = json::parse(res->body);
+    // auto body = loadJsonFile("./allgamedata2.json");
+
+    // auto j = json::parse(body, nullptr, false);
 
     for (auto& j : j["allPlayers"])
     {
-        if (j["riotId"].get<std::string>() == riotID)
+        if (j["riotId"].get<std::string>() == player.riotID)
         {
             player.role = j["position"];
             player.team = j["team"];

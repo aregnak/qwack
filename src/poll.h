@@ -23,7 +23,7 @@ public:
     std::vector<std::string> getPUUIDs(LCUClient&);
     std::string getPlayerName(LCUClient&, std::string);
     std::string getPlayerRank(LCUClient&, std::string);
-    void getPlayerRoleAndTeam(PlayerInfo&, std::string);
+    void getPlayerRoleAndTeam(PlayerInfo&);
 
     float getGameTime();
     int getcs(const std::string&);
