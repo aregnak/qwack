@@ -32,6 +32,7 @@
 #include "parser.h"
 #include "lcuClient.h"
 #include "playerInfo.h"
+#include "keyboard.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -361,6 +362,7 @@ int main(int, char**)
               << std::chrono::duration<double>(finish - start).count() << "s" << std::endl;
 
     bool hidden = false;
+    bool showRanks = false;
 
     std::atomic<float> csPerMin = -1.0f;
     std::atomic<float> currentGold = 500.0f;
@@ -445,16 +447,19 @@ int main(int, char**)
             {
                 running = false;
             }
-
-            if (event.type == SDL_KEYDOWN)
-            {
-                if (event.key.scancode == SDL_SCNACODE_TAB)
-                    running = false;
-            }
         }
         float csDisplay = csPerMin.load();
         float goldDisplay = currentGold.load();
         float timeDisplay = gameTime.load();
+
+        if (IsTabDown())
+        {
+            showRanks = true;
+        }
+        else
+        {
+            showRanks = false;
+        }
 
         if (isLeagueFocused())
         {
@@ -528,6 +533,7 @@ int main(int, char**)
         }
 
         // Ranks overlay
+        if (showRanks)
         {
             int num = 0;
             for (auto& pos : rankPoss)
