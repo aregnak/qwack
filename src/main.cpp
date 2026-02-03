@@ -322,16 +322,37 @@ int main(int, char**)
     for (auto& p : players)
     {
         poller.getPlayerRoleAndTeam(p, p.riotID);
-        std::cout << "Player:" << " riotID: " << p.riotID << " rank: " << p.rank
-                  << " role: " << p.role << " team: " << p.team << std::endl;
+        // std::cout << "Player:" << " riotID: " << p.riotID << " rank: " << p.rank
+        //           << " role: " << p.role << " team: " << p.team << std::endl;
     }
 
+    // TODO: merge the ranks into sortPlayers
     sortPlayers(players);
+
+    std::vector<std::string> ranks;
 
     for (auto& p : players)
     {
-        std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
-                  << " role: " << p.role << " team: " << p.team << std::endl;
+        char rankLetter = p.rank[0];
+        int tierNumber = romanToInt(p.rank.substr(p.rank.find(' ') + 1));
+
+        if (tierNumber != -1)
+        {
+            std::ostringstream oss;
+            oss << rankLetter << tierNumber;
+            ranks.push_back(oss.str());
+        }
+        else
+        {
+            ranks.push_back("");
+        }
+        // std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
+        //           << " role: " << p.role << " team: " << p.team << std::endl;
+    }
+
+    for (auto& i : ranks)
+    {
+        std::cout << "Rank: " << i << std::endl;
     }
 
     auto finish = std::chrono::steady_clock::now();
@@ -424,6 +445,12 @@ int main(int, char**)
             {
                 running = false;
             }
+
+            if (event.type == SDL_KEYDOWN)
+            {
+                if (event.key.scancode == SDL_SCNACODE_TAB)
+                    running = false;
+            }
         }
         float csDisplay = csPerMin.load();
         float goldDisplay = currentGold.load();
@@ -508,14 +535,15 @@ int main(int, char**)
                 ImGui::SetNextWindowBgAlpha(0.4f);
                 ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
                 ImGui::SetNextWindowSize(rankSize, ImGuiCond_Always);
-                ImGui::Begin(("RankedWindow##" + std::to_string(num++)).c_str(), nullptr,
+                ImGui::Begin(("RankedWindow##" + std::to_string(num)).c_str(), nullptr,
                              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                                  ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
                                  ImGuiWindowFlags_NoSavedSettings |
                                  ImGuiWindowFlags_NoFocusOnAppearing);
 
-                ImGui::Text("B1");
+                ImGui::Text(ranks[num].c_str());
                 ImGui::End();
+                num++;
             }
         }
 

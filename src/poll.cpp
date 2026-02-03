@@ -135,7 +135,7 @@ std::string poll::getPlayerRank(LCUClient& lcu, std::string puuid)
     {
         auto& solo = rank["queueMap"]["RANKED_SOLO_5x5"];
         std::stringstream rstream;
-        rstream << solo["tier"] << " " << solo["division"];
+        rstream << solo["tier"].get<std::string>() << " " << solo["division"].get<std::string>();
         return rstream.str();
     }
     return "";

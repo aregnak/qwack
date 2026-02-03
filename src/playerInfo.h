@@ -38,3 +38,17 @@ inline void sortPlayers(std::vector<PlayerInfo>& players)
                          return roleOrder.at(a.role) < roleOrder.at(b.role);
                      });
 }
+
+// Just to decrypt rank tiers.
+inline int romanToInt(const std::string& roman)
+{
+    if (roman == "I")
+        return 1;
+    if (roman == "II")
+        return 2;
+    if (roman == "III")
+        return 3;
+    if (roman == "IV")
+        return 4;
+    return -1; // NA / invalid
+}
