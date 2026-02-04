@@ -4,6 +4,7 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
 
 #include "httplib.h"
 #include "json.hpp"
@@ -20,18 +21,24 @@ public:
 
     std::string getCurrentSummoner(LCUClient&);
 
-    std::vector<std::string> getPUUIDs(LCUClient&);
-    std::string getPlayerName(LCUClient&, std::string);
-    std::string getPlayerRank(LCUClient&, std::string);
+    void getSessionInfo(LCUClient&, std::vector<PlayerInfo>&);
+    std::string getPlayerName(LCUClient&, const std::string);
+    std::string getPlayerRank(LCUClient&, const std::string);
     void getPlayerRoleAndTeam(PlayerInfo&);
+
+    std::string getChampionNameById(int);
 
     float getGameTime();
     int getcs(const std::string&);
     float getGold();
+
+    std::string loadJsonFile(const std::string&);
 
     // void getPlayerGameInfo(StaticPlayer&);
 
 private:
     httplib::SSLClient cli;
     httplib::Result res;
+
+    nlohmann::json championData;
 };

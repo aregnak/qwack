@@ -10,6 +10,8 @@
 
 struct PlayerInfo
 {
+    int champID;
+    std::string champ;
     std::string puuid;
     std::string riotID;
     std::string rank;

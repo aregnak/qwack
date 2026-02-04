@@ -1,4 +1,7 @@
 #include "poll.h"
+#include "playerInfo.h"
+#include <cstddef>
+#include <string>
 
 using json = nlohmann::json;
 
@@ -6,6 +9,9 @@ poll::poll()
     : cli("127.0.0.1", 2999)
 {
     cli.enable_server_certificate_verification(false);
+
+    auto body = loadJsonFile("./champions.json");
+    championData = json::parse(body, nullptr, false);
 }
 
 bool poll::update()
@@ -55,7 +61,7 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
     return nstream.str();
 }
 
-std::string loadJsonFile(const std::string& path)
+std::string poll::loadJsonFile(const std::string& path)
 {
     std::ifstream f(path);
     std::stringstream ss;
@@ -63,33 +69,31 @@ std::string loadJsonFile(const std::string& path)
     return ss.str();
 }
 
-std::vector<std::string> poll::getPUUIDs(LCUClient& lcu)
+void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
 {
     auto res = lcu.get("/lol-gameflow/v1/session");
-    // auto body = loadJsonFile("./session2.json");
-
     auto session = json::parse(res->body);
+    // auto body = loadJsonFile("./session2.json");
     // auto session = json::parse(body, nullptr, false);
-    if (session.is_discarded())
-    {
-        return std::vector<std::string>();
-    }
 
     const std::string gameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
     if (gameMode != "PRACTICETOOL")
     {
-        std::vector<std::string> puuids;
+        size_t i = 0;
         for (const auto& p : session["gameData"]["playerChampionSelections"])
         {
-            puuids.push_back(p["puuid"]);
+            if (i >= players.size())
+            {
+                break;
+            }
+            players[i].puuid = p["puuid"].get<std::string>();
+            players[i].champID = p["championId"];
+            i++;
         }
-
-        return puuids;
     }
-    return std::vector<std::string>();
 }
 
-std::string poll::getPlayerName(LCUClient& lcu, std::string puuid)
+std::string poll::getPlayerName(LCUClient& lcu, const std::string puuid)
 {
     auto nres = lcu.get("/lol-summoner/v2/summoners/puuid/" + puuid);
 
@@ -116,7 +120,7 @@ std::string poll::getPlayerName(LCUClient& lcu, std::string puuid)
     return nstream.str();
 }
 
-std::string poll::getPlayerRank(LCUClient& lcu, std::string puuid)
+std::string poll::getPlayerRank(LCUClient& lcu, const std::string puuid)
 {
     auto nres = lcu.get("/lol-ranked/v1/ranked-stats/" + puuid);
 
@@ -146,18 +150,33 @@ std::string poll::getPlayerRank(LCUClient& lcu, std::string puuid)
     return "";
 }
 
+std::string poll::getChampionNameById(int id)
+{
+    std::string idstr = std::to_string(id);
+
+    for (const auto& [name, champ] : championData["data"].items())
+    {
+        if (champ["key"].get<std::string>() == idstr)
+        {
+            return champ["name"].get<std::string>();
+        }
+    }
+
+    return "UnknownChampion";
+}
+
 void poll::getPlayerRoleAndTeam(PlayerInfo& player)
 {
     res = cli.Get("/liveclientdata/allgamedata");
 
-    auto j = json::parse(res->body);
+    auto gameData = json::parse(res->body);
     // auto body = loadJsonFile("./allgamedata2.json");
 
-    // auto j = json::parse(body, nullptr, false);
+    // auto gameData = json::parse(body, nullptr, false);
 
-    for (const auto& j : j["allPlayers"])
+    for (const auto& j : gameData["allPlayers"])
     {
-        if (j["riotId"].get<std::string>() == player.riotID)
+        if (j["championName"] == player.champ)
         {
             player.role = j["position"];
             player.team = j["team"];
