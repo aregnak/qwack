@@ -79,7 +79,7 @@ std::vector<std::string> poll::getPUUIDs(LCUClient& lcu)
     if (gameMode != "PRACTICETOOL")
     {
         std::vector<std::string> puuids;
-        for (auto& p : session["gameData"]["playerChampionSelections"])
+        for (const auto& p : session["gameData"]["playerChampionSelections"])
         {
             puuids.push_back(p["puuid"]);
         }
@@ -155,7 +155,7 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
 
     // auto j = json::parse(body, nullptr, false);
 
-    for (auto& j : j["allPlayers"])
+    for (const auto& j : j["allPlayers"])
     {
         if (j["riotId"].get<std::string>() == player.riotID)
         {
@@ -188,7 +188,7 @@ int poll::getcs(const std::string& playerName)
     }
 
     int cs = 0;
-    for (auto& p : j["allPlayers"])
+    for (const auto& p : j["allPlayers"])
     {
         if (p["summonerName"].get<std::string>() == playerName)
         {

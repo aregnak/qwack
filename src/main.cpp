@@ -225,6 +225,7 @@ int main(int, char**)
     ImVec2 rankSize = ImVec2(30, 30);
     std::vector<ImVec2> rankPoss(10);
 
+    // Create rank overlay positions. 10 in total, one for each player.
     for (int i = 0; i < rankPoss.size(); i++)
     {
         // Order team ranks
@@ -346,7 +347,7 @@ int main(int, char**)
                                 // TODO: merge the ranks into sortPlayers
                                 sortPlayers(players);
 
-                                for (auto& p : players)
+                                for (const auto& p : players)
                                 {
                                     char rankLetter = p.rank[0];
                                     int tierNumber =
@@ -454,21 +455,10 @@ int main(int, char**)
         float goldDisplay = currentGold.load();
         float timeDisplay = gameTime.load();
 
+        // CTRL+C doesn't really work, I think because the window is unfocusable.
         if (killSwitch())
         {
             running = false;
-        }
-
-        if (!practicetool)
-        {
-            if (!windowHidden && IsTabDown())
-            {
-                showRanks = true;
-            }
-            else
-            {
-                showRanks = false;
-            }
         }
 
         if (isLeagueFocused())
@@ -485,6 +475,18 @@ int main(int, char**)
             {
                 SDL_HideWindow(window);
                 windowHidden = true;
+            }
+        }
+
+        if (!practicetool)
+        {
+            if (!windowHidden && IsTabDown())
+            {
+                showRanks = true;
+            }
+            else
+            {
+                showRanks = false;
             }
         }
 
@@ -542,7 +544,7 @@ int main(int, char**)
         if (showRanks)
         {
             int num = 0;
-            for (auto& pos : rankPoss)
+            for (const auto& pos : rankPoss)
             {
                 ImGui::SetNextWindowBgAlpha(0.4f);
                 ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
