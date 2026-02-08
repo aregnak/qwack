@@ -28,6 +28,7 @@
 // LCU debug prints
 #define LCU_LOG(x) std::cout << "[LCU] " << x << std::endl
 
+#include "game.h"
 #include "poll.h"
 #include "parser.h"
 #include "lcuClient.h"
@@ -300,6 +301,8 @@ int main(int, char**)
     bool practicetool = false;
     bool playersLoaded = false;
 
+    gameState gameState = gameState::LOBBY;
+
     // Polling thread.
     std::thread lcuThread(
         [&]()
@@ -316,6 +319,8 @@ int main(int, char**)
                 {
                     if (poller.update())
                     {
+                        gameState = gameState::INGAME;
+
                         if (!playersLoaded)
                         {
                             LCU_LOG("Polling Player Info...");
@@ -347,10 +352,10 @@ int main(int, char**)
                                 {
                                     p.champ = poller.getChampionNameById(p.champID);
                                     poller.getPlayerRoleAndTeam(p);
-                                    std::cout << "puuid: " << p.puuid << " champId: " << p.champID
-                                              << " riotID: " << p.riotID << " rank: " << p.rank
-                                              << " role: " << p.role << " team: " << p.team
-                                              << std::endl;
+                                    // std::cout << "puuid: " << p.puuid << " champId: " << p.champID
+                                    //           << " riotID: " << p.riotID << " rank: " << p.rank
+                                    //           << " role: " << p.role << " team: " << p.team
+                                    //           << std::endl;
                                 }
 
                                 sortPlayers(players);
@@ -423,7 +428,7 @@ int main(int, char**)
                     }
                     else
                     {
-                        csPerMin = -1.0f;
+                        gameState = gameState::LOBBY;
                     }
 
                     std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -443,6 +448,8 @@ int main(int, char**)
 
     // Main thread.
     SDL_Event event;
+    bool inGame = true;
+
     while (running)
     {
         while (SDL_PollEvent(&event))
@@ -494,6 +501,31 @@ int main(int, char**)
             else
             {
                 showRanks = false;
+            }
+        }
+
+        if (gameState == gameState::LOBBY)
+        {
+            if (inGame)
+            {
+                inGame = false;
+
+                players.clear();
+                ranks.clear();
+                playersLoaded = false;
+                practicetool = false;
+                csPerMin = 0.0f;
+
+                LCU_LOG("In lobby. Waiting for game.");
+            }
+        }
+        else if (gameState == gameState::INGAME)
+        {
+            if (!inGame)
+            {
+                inGame = true;
+
+                LCU_LOG("GLHF.");
             }
         }
 
