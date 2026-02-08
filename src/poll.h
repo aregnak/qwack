@@ -40,5 +40,6 @@ private:
     httplib::SSLClient cli;
     httplib::Result res;
 
-    nlohmann::json championData;
+    nlohmann::json championDataCache;
+    nlohmann::json gameDataCache;
 };

@@ -322,62 +322,64 @@ int main(int, char**)
 
                             poller.getSessionInfo(lcuC, players);
 
-                            // Unfortunately my understanding of the LCU API led me here,
-                            // to get players' ranks, we need the puuid, but to get their in game
-                            // stats, we need the live API (yes, different).
-                            // this code is very messy for now.
-                            // if (!puuids.empty())
-                            // {
-
-                            for (size_t i = 0; i < players.size(); i++)
+                            if (players.empty())
                             {
-                                const std::string puuid = players[i].puuid;
-
-                                players[i].riotID = poller.getPlayerName(lcuC, puuid);
-                                players[i].rank = poller.getPlayerRank(lcuC, puuid);
+                                practicetool = true;
+                                LCU_LOG("Gamemode is practice tool, skipping player info");
                             }
 
-                            for (auto& p : players)
+                            if (!practicetool)
                             {
-                                p.champ = poller.getChampionNameById(p.champID);
-                                poller.getPlayerRoleAndTeam(p);
-                                std::cout << "puuid: " << p.puuid << " champId: " << p.champID
-                                          << " riotID: " << p.riotID << " rank: " << p.rank
-                                          << " role: " << p.role << " team: " << p.team
-                                          << std::endl;
-                            }
+                                // Unfortunately my understanding of the LCU API led me here,
+                                // to get players' ranks, we need the puuid, but to get their in game
+                                // stats, we need the live API (yes, different).
+                                // this code is very messy for now.
 
-                            sortPlayers(players);
-
-                            for (const auto& p : players)
-                            {
-                                char rankLetter = p.rank[0];
-                                int tierNumber = romanToInt(p.rank.substr(p.rank.find(' ') + 1));
-
-                                if (tierNumber != -1)
+                                for (size_t i = 0; i < players.size(); i++)
                                 {
-                                    std::ostringstream oss;
-                                    oss << rankLetter << tierNumber;
-                                    ranks.push_back(oss.str());
-                                }
-                                else
-                                {
-                                    ranks.push_back("");
+                                    const std::string puuid = players[i].puuid;
+
+                                    players[i].riotID = poller.getPlayerName(lcuC, puuid);
+                                    players[i].rank = poller.getPlayerRank(lcuC, puuid);
                                 }
 
-                                std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID
-                                          << " rank: " << p.rank << " role: " << p.role
-                                          << " team: " << p.team << std::endl;
+                                for (auto& p : players)
+                                {
+                                    p.champ = poller.getChampionNameById(p.champID);
+                                    poller.getPlayerRoleAndTeam(p);
+                                    std::cout << "puuid: " << p.puuid << " champId: " << p.champID
+                                              << " riotID: " << p.riotID << " rank: " << p.rank
+                                              << " role: " << p.role << " team: " << p.team
+                                              << std::endl;
+                                }
+
+                                sortPlayers(players);
+
+                                for (const auto& p : players)
+                                {
+                                    char rankLetter = p.rank[0];
+                                    int tierNumber =
+                                        romanToInt(p.rank.substr(p.rank.find(' ') + 1));
+
+                                    if (tierNumber != -1)
+                                    {
+                                        std::ostringstream oss;
+                                        oss << rankLetter << tierNumber;
+                                        ranks.push_back(oss.str());
+                                    }
+                                    else
+                                    {
+                                        ranks.push_back("");
+                                    }
+
+                                    std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID
+                                              << " rank: " << p.rank << " role: " << p.role
+                                              << " team: " << p.team << std::endl;
+                                }
+                                LCU_LOG("Success");
+                                practicetool = false;
                             }
-                            LCU_LOG("Success");
                             playersLoaded = true;
-                            practicetool = false;
-                        }
-                        else if (practicetool)
-                        {
-                            playersLoaded = true;
-                            practicetool = true;
-                            LCU_LOG("Gamemode is practice tool, skipping player info");
                         }
 
                         currentCS = poller.getcs(playerName);

@@ -11,7 +11,7 @@ poll::poll()
     cli.enable_server_certificate_verification(false);
 
     auto body = loadJsonFile("./champions.json");
-    championData = json::parse(body, nullptr, false);
+    championDataCache = json::parse(body, nullptr, false);
 }
 
 bool poll::update()
@@ -28,6 +28,14 @@ bool poll::update()
 
     if (res->status != 200)
     {
+        return false;
+    }
+
+    gameDataCache = json::parse(res->body);
+
+    if (gameDataCache.is_discarded())
+    {
+        LCU_LOG("Failed to parse /allgamedata.");
         return false;
     }
 
@@ -61,6 +69,7 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
     return nstream.str();
 }
 
+// Helper function used for static testing.
 std::string poll::loadJsonFile(const std::string& path)
 {
     std::ifstream f(path);
@@ -90,6 +99,10 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
             players[i].champID = p["championId"];
             i++;
         }
+    }
+    else
+    {
+        players.clear();
     }
 }
 
@@ -154,7 +167,7 @@ std::string poll::getChampionNameById(int id)
 {
     std::string idstr = std::to_string(id);
 
-    for (const auto& [name, champ] : championData["data"].items())
+    for (const auto& [name, champ] : championDataCache["data"].items())
     {
         if (champ["key"].get<std::string>() == idstr)
         {
@@ -167,14 +180,14 @@ std::string poll::getChampionNameById(int id)
 
 void poll::getPlayerRoleAndTeam(PlayerInfo& player)
 {
-    res = cli.Get("/liveclientdata/allgamedata");
+    // res = cli.Get("/liveclientdata/allgamedata");
 
-    auto gameData = json::parse(res->body);
+    // auto gameData = json::parse(res->body);
     // auto body = loadJsonFile("./allgamedata2.json");
 
     // auto gameData = json::parse(body, nullptr, false);
 
-    for (const auto& j : gameData["allPlayers"])
+    for (const auto& j : gameDataCache["allPlayers"])
     {
         if (j["championName"] == player.champ)
         {
@@ -186,28 +199,14 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
 
 float poll::getGameTime()
 {
-    auto j = json::parse(res->body);
-    if (j.is_discarded())
-    {
-        LCU_LOG("JSON parse failed");
-        return -1.0f;
-    }
-
-    float gameTime = j["gameData"]["gameTime"];
-    return gameTime;
+    return gameDataCache["gameData"]["gameTime"];
+    //
 }
 
 int poll::getcs(const std::string& playerName)
 {
-    auto j = json::parse(res->body);
-    if (j.is_discarded())
-    {
-        LCU_LOG("JSON parse failed");
-        return -1.0f;
-    }
-
     int cs = 0;
-    for (const auto& p : j["allPlayers"])
+    for (const auto& p : gameDataCache["allPlayers"])
     {
         if (p["summonerName"].get<std::string>() == playerName)
         {
@@ -220,15 +219,6 @@ int poll::getcs(const std::string& playerName)
 
 float poll::getGold()
 {
-    auto j = json::parse(res->body);
-    if (j.is_discarded())
-    {
-        LCU_LOG("JSON parse failed");
-        return -1.0f;
-    }
-
-    float gold = j["activePlayer"]["currentGold"];
-    // LCU_LOG("Player Gold: " << gold);
-
-    return gold;
+    return gameDataCache["activePlayer"]["currentGold"];
+    //
 }
