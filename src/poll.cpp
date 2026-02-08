@@ -1,4 +1,5 @@
 #include "poll.h"
+#include "parser.h"
 #include "playerInfo.h"
 #include <cstddef>
 #include <string>
@@ -10,8 +11,7 @@ poll::poll()
 {
     cli.enable_server_certificate_verification(false);
 
-    auto body = loadJsonFile("./champions.json");
-    championDataCache = json::parse(body, nullptr, false);
+    getChampionList();
 }
 
 bool poll::update()
@@ -221,4 +221,43 @@ float poll::getGold()
 {
     return gameDataCache["activePlayer"]["currentGold"];
     //
+}
+
+// Private
+void poll::getChampionList()
+{
+    httplib::Client cli("https://ddragon.leagueoflegends.com");
+
+    // Get current game version.
+    auto res = cli.Get("/api/versions.json");
+    if (!res || res->status != 200)
+    {
+        LCU_LOG("Failed to load ddragon versions.");
+    }
+
+    auto versions = json::parse(res->body, nullptr, false);
+    if (versions.is_discarded())
+    {
+        LCU_LOG("Failed to parse ddragon versions.");
+    }
+
+    std::string currentVersion = versions[0];
+
+    // Get champion list based on current version.
+    auto cres = cli.Get("/cdn/" + currentVersion + "/data/en_US/champion.json");
+
+    if (!cres || cres->status != 200)
+    {
+        LCU_LOG("Failed to load ddragon champions.");
+    }
+
+    championDataCache = json::parse(cres->body, nullptr, false);
+    if (championDataCache.is_discarded())
+    {
+        LCU_LOG("Failed to parse ddragon versions.");
+    }
+    else
+    {
+        LCU_LOG("Successfully loaded champions, version: " + currentVersion);
+    }
 }

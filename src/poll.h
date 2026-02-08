@@ -37,6 +37,8 @@ public:
     // void getPlayerGameInfo(StaticPlayer&);
 
 private:
+    void getChampionList();
+
     httplib::SSLClient cli;
     httplib::Result res;
 
