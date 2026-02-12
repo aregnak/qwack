@@ -16,7 +16,7 @@ A simple League of Legends companion app capable of displaying in game statistic
 
 ### How To Compile
 #### CMAKE
-You need OpenSSL libraries, if you got them using vcpkg, build using:
+You need the OpenSSL library, if you got them using vcpkg, build using:
 (Make sure to change the path to vcpkg before running)
 ```bash
 cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
