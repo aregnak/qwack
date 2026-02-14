@@ -23,9 +23,9 @@ struct PlayerInfo
 // Needed for gold difference, ranks, etc...
 inline void sortPlayers(std::vector<PlayerInfo>& players)
 {
-    std::unordered_map<std::string, int> roleOrder = {
-        { "TOP", 0 }, { "JUNGLE", 1 }, { "MIDDLE", 2 }, { "BOTTOM", 3 }, { "UTILITY", 4 }
-    };
+    std::unordered_map<std::string, int> roleOrder = { { "TOP", 0 },     { "JUNGLE", 1 },
+                                                       { "MIDDLE", 2 },  { "BOTTOM", 3 },
+                                                       { "UTILITY", 4 }, { "NONE", 5 } };
 
     std::unordered_map<std::string, int> teamOrder = { { "ORDER", 0 }, { "CHAOS", 1 } };
 

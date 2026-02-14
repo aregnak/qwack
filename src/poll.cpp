@@ -86,12 +86,14 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
     // auto session = json::parse(body, nullptr, false);
 
     const std::string gameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
+    std::cout << "game mode: " << gameMode << std::endl;
     if (gameMode != "PRACTICETOOL")
     {
+        std::cout << "Not practice tool yet." << std::endl;
         size_t i = 0;
         for (const auto& p : session["gameData"]["playerChampionSelections"])
         {
-            if (i >= players.size())
+            if (i >= 10)
             {
                 break;
             }
@@ -99,9 +101,11 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
             players[i].champID = p["championId"];
             i++;
         }
+        std::cout << "done" << std::endl;
     }
     else
     {
+        std::cout << "practice tool." << std::endl;
         players.clear();
     }
 }

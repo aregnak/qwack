@@ -289,7 +289,7 @@ int main(int, char**)
     LCU_LOG("Summoner found: " << playerName);
 
     std::vector<std::string> ranks;
-    std::vector<PlayerInfo> players(10);
+    std::vector<PlayerInfo> players;
 
     bool windowHidden = false;
     bool showRanks = false;
@@ -510,8 +510,9 @@ int main(int, char**)
             {
                 inGame = false;
 
-                players.clear();
                 ranks.clear();
+                players.clear();
+                players.resize(10);
                 playersLoaded = false;
                 practicetool = false;
                 csPerMin = 0.0f;
