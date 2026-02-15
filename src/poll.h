@@ -19,19 +19,20 @@ public:
 
     bool update(); // Live Client Data API
 
+    // Using LCU (in client).
     std::string getCurrentSummoner(LCUClient&);
-
     void getSessionInfo(LCUClient&, std::vector<PlayerInfo>&);
     std::string getPlayerName(LCUClient&, const std::string);
     std::string getPlayerRank(LCUClient&, const std::string);
+
+    // Using Live Client API (in game).
     void getPlayerRoleAndTeam(PlayerInfo&);
-
-    std::string getChampionNameById(int);
-
     float getGameTime();
     int getcs(const std::string&);
     float getGold();
 
+    // Helper functions
+    std::string getChampionNameById(int);
     std::string loadJsonFile(const std::string&);
 
     // void getPlayerGameInfo(StaticPlayer&);

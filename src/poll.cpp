@@ -69,15 +69,6 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
     return nstream.str();
 }
 
-// Helper function used for static testing.
-std::string poll::loadJsonFile(const std::string& path)
-{
-    std::ifstream f(path);
-    std::stringstream ss;
-    ss << f.rdbuf();
-    return ss.str();
-}
-
 void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
 {
     auto res = lcu.get("/lol-gameflow/v1/session");
@@ -167,21 +158,6 @@ std::string poll::getPlayerRank(LCUClient& lcu, const std::string puuid)
     return "";
 }
 
-std::string poll::getChampionNameById(int id)
-{
-    std::string idstr = std::to_string(id);
-
-    for (const auto& [name, champ] : championDataCache["data"].items())
-    {
-        if (champ["key"].get<std::string>() == idstr)
-        {
-            return champ["name"].get<std::string>();
-        }
-    }
-
-    return "UnknownChampion";
-}
-
 void poll::getPlayerRoleAndTeam(PlayerInfo& player)
 {
     // res = cli.Get("/liveclientdata/allgamedata");
@@ -225,6 +201,31 @@ float poll::getGold()
 {
     return gameDataCache["activePlayer"]["currentGold"];
     //
+}
+
+// Helper functions
+std::string poll::getChampionNameById(int id)
+{
+    std::string idstr = std::to_string(id);
+
+    for (const auto& [name, champ] : championDataCache["data"].items())
+    {
+        if (champ["key"].get<std::string>() == idstr)
+        {
+            return champ["name"].get<std::string>();
+        }
+    }
+
+    return "UnknownChampion";
+}
+
+// Helper function used for static testing.
+std::string poll::loadJsonFile(const std::string& path)
+{
+    std::ifstream f(path);
+    std::stringstream ss;
+    ss << f.rdbuf();
+    return ss.str();
 }
 
 // Private
