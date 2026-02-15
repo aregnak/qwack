@@ -1,3 +1,4 @@
+#include <mutex>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #define _WIN32_WINNT 0x0A00
@@ -290,18 +291,16 @@ int main(int, char**)
 
     std::vector<std::string> ranks;
     std::vector<PlayerInfo> players(10);
-
-    bool windowHidden = false;
-    bool showRanks = false;
+    std::mutex dataMutex;
 
     std::atomic<float> csPerMin = -1.0f;
     std::atomic<float> currentGold = 500.0f;
     std::atomic<float> gameTime = 0.0f;
     std::atomic<bool> running = true;
-    bool practicetool = false;
-    bool playersLoaded = false;
+    std::atomic<bool> practicetool = false;
+    std::atomic<bool> playersLoaded = false;
 
-    gameState gameState = gameState::LOBBY;
+    std::atomic<gameState> gameState = gameState::LOBBY;
 
     // Polling thread.
     std::thread lcuThread(
@@ -315,41 +314,38 @@ int main(int, char**)
 
             try
             {
-                while (running)
+                while (running.load())
                 {
                     if (poller.update())
                     {
                         gameState = gameState::INGAME;
 
-                        if (!playersLoaded)
+                        if (!playersLoaded.load())
                         {
+                            std::vector<PlayerInfo> newPlayers(10);
+                            std::vector<std::string> newRanks;
                             LCU_LOG("Polling Player Info...");
 
-                            poller.getSessionInfo(lcuC, players);
+                            poller.getSessionInfo(lcuC, newPlayers);
 
-                            if (players.empty())
+                            if (newPlayers.empty())
                             {
-                                practicetool = true;
+                                practicetool.store(true);
                                 LCU_LOG("Gamemode is practice tool, skipping player info");
                             }
 
-                            if (!practicetool)
+                            if (!practicetool.load())
                             {
                                 // Unfortunately my understanding of the LCU API led me here,
                                 // to get players' ranks, we need the puuid, but to get their in game
                                 // stats, we need the live API (yes, different).
                                 // this code is very messy for now.
 
-                                for (size_t i = 0; i < players.size(); i++)
+                                for (auto& p : newPlayers)
                                 {
-                                    const std::string puuid = players[i].puuid;
+                                    p.riotID = poller.getPlayerName(lcuC, p.puuid);
+                                    p.rank = poller.getPlayerRank(lcuC, p.puuid);
 
-                                    players[i].riotID = poller.getPlayerName(lcuC, puuid);
-                                    players[i].rank = poller.getPlayerRank(lcuC, puuid);
-                                }
-
-                                for (auto& p : players)
-                                {
                                     p.champ = poller.getChampionNameById(p.champID);
                                     poller.getPlayerRoleAndTeam(p);
                                     // std::cout << "puuid: " << p.puuid << " champId: " << p.champID
@@ -358,9 +354,9 @@ int main(int, char**)
                                     //           << std::endl;
                                 }
 
-                                sortPlayers(players);
+                                sortPlayers(newPlayers);
 
-                                for (const auto& p : players)
+                                for (const auto& p : newPlayers)
                                 {
                                     char rankLetter = p.rank[0];
                                     int tierNumber =
@@ -370,21 +366,26 @@ int main(int, char**)
                                     {
                                         std::ostringstream oss;
                                         oss << rankLetter << tierNumber;
-                                        ranks.push_back(oss.str());
+                                        newRanks.push_back(oss.str());
                                     }
                                     else
                                     {
-                                        ranks.push_back("");
+                                        newRanks.push_back("");
                                     }
 
-                                    std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID
-                                              << " rank: " << p.rank << " role: " << p.role
-                                              << " team: " << p.team << std::endl;
+                                    // std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID
+                                    //           << " rank: " << p.rank << " role: " << p.role
+                                    //           << " team: " << p.team << std::endl;
                                 }
                                 LCU_LOG("Success");
-                                practicetool = false;
+                                practicetool.store(false);
                             }
-                            playersLoaded = true;
+                            playersLoaded.store(true);
+
+                            std::lock_guard<std::mutex> lock(dataMutex);
+
+                            players = std::move(newPlayers);
+                            ranks = std::move(newRanks);
                         }
 
                         currentCS = poller.getcs(playerName);
@@ -392,17 +393,17 @@ int main(int, char**)
                         float time = poller.getGameTime();
 
                         // Minons spawn after 30 seconds, no need to measure anything before that.
-                        if (gameTime >= 30)
+                        if (time >= 30.0f)
                         {
                             // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
                             if (lastCS == currentCS)
                             {
-                                if (currentGold - lastGold > 14)
+                                if (gold - lastGold > 14.0f)
                                 {
                                     estimatedCS++;
                                 }
                                 // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
-                                lastGold = currentGold;
+                                lastGold = gold;
                             }
                             else
                             {
@@ -418,7 +419,7 @@ int main(int, char**)
                             {
                                 estimatedCS--;
                             }
-                            csPerMin.store(totalCS / (gameTime / 60.0f), std::memory_order_relaxed);
+                            csPerMin.store(totalCS / (time / 60.0f), std::memory_order_relaxed);
                         }
                         // The cs/min counter will always be an approximation because the API updates the number
                         // every 10 cs, this algorithm will somewhat smoothen that out, but any
@@ -428,7 +429,7 @@ int main(int, char**)
                     }
                     else
                     {
-                        gameState = gameState::LOBBY;
+                        gameState.store(gameState::LOBBY);
                     }
 
                     std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -437,32 +438,34 @@ int main(int, char**)
             catch (const std::exception& e)
             {
                 std::cerr << "[LCU THREAD EXCEPTION] " << e.what() << std::endl;
-                running = false;
+                running.store(false);
             }
             catch (...)
             {
                 std::cerr << "[LCU THREAD UNKNOWN EXCEPTION]" << std::endl;
-                running = false;
+                running.store(false);
             }
         });
 
     // Main thread.
     SDL_Event event;
     bool inGame = true;
+    bool windowHidden = false;
+    bool showRanks = false;
 
-    while (running)
+    while (running.load())
     {
         while (SDL_PollEvent(&event))
         {
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
             {
-                running = false;
+                running.store(false);
             }
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
                 event.window.windowID == SDL_GetWindowID(window))
             {
-                running = false;
+                running.store(false);
             }
         }
         float csDisplay = csPerMin.load();
@@ -472,7 +475,7 @@ int main(int, char**)
         // CTRL+C doesn't really work, I think because the window is unfocusable.
         if (killSwitch())
         {
-            running = false;
+            running.store(false);
         }
 
         if (isLeagueFocused())
@@ -492,7 +495,7 @@ int main(int, char**)
             }
         }
 
-        if (!practicetool)
+        if (!practicetool.load())
         {
             if (!windowHidden && IsTabDown())
             {
@@ -504,23 +507,23 @@ int main(int, char**)
             }
         }
 
-        if (gameState == gameState::LOBBY)
+        if (gameState.load() == gameState::LOBBY)
         {
             if (inGame)
             {
                 inGame = false;
 
                 ranks.clear();
-                players.clear();
-                players.resize(10);
-                playersLoaded = false;
-                practicetool = false;
-                csPerMin = 0.0f;
+                players = std::vector<PlayerInfo>(10);
+
+                playersLoaded.store(false);
+                practicetool.store(false);
+                csPerMin.store(0.0f);
 
                 LCU_LOG("In lobby. Waiting for game.");
             }
         }
-        else if (gameState == gameState::INGAME)
+        else if (gameState.load() == gameState::INGAME)
         {
             if (!inGame)
             {
@@ -569,7 +572,7 @@ int main(int, char**)
                              ImGuiWindowFlags_NoSavedSettings |
                              ImGuiWindowFlags_NoFocusOnAppearing);
 
-            if (csPerMin < 0.0f)
+            if (csPerMin.load() < 0.0f)
             {
                 ImGui::Text("Waiting for game.");
             }
@@ -611,7 +614,7 @@ int main(int, char**)
     }
 
     // Cleanup
-    running = false;
+    running.store(false);
     if (lcuThread.joinable())
     {
         lcuThread.join();
