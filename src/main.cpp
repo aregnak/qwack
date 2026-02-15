@@ -26,8 +26,14 @@
 #include "httplib.h"
 #include "json.hpp"
 
-// LCU debug prints
-#define LCU_LOG(x) std::cout << "[LCU] " << x << std::endl
+// Debug prints
+#ifndef LCU_LOG
+#define LCU_LOG(x) std::cerr << "[LCU] " << x << std::endl
+#endif
+
+#ifndef QWACK_LOG
+#define QWACK_LOG(x) std::cout << "[Qwack] " << x << std::endl
+#endif
 
 #include "game.h"
 #include "poll.h"
@@ -228,6 +234,7 @@ int main(int, char**)
     std::vector<ImVec2> rankPoss(10);
 
     // Create rank overlay positions. 10 in total, one for each player.
+    // Please don't move the scoreboard in game.
     for (int i = 0; i < rankPoss.size(); i++)
     {
         // Order team ranks
@@ -238,6 +245,18 @@ int main(int, char**)
         else // Chaos team ranks
         {
             rankPoss[i] = ImVec2(screenWidth / 1.25f, screenHeight / 3.3f + ((i - 5) * 80));
+        }
+    }
+
+    ImVec2 itemSumSize = ImVec2(130, 30);
+    std::vector<ImVec2> itemPoss(5);
+
+    for (int i = 0; i < itemPoss.size(); i++)
+    {
+        // Order team ranks
+        if (i < 5)
+        {
+            rankPoss[i] = ImVec2(screenWidth / 5.5f, screenHeight / 3.3f + (i * 80));
         }
     }
 
@@ -287,7 +306,6 @@ int main(int, char**)
             lastPoll = now;
         }
     }
-    LCU_LOG("Summoner found: " << playerName);
 
     std::vector<std::string> ranks;
     std::vector<PlayerInfo> players(10);
@@ -331,7 +349,7 @@ int main(int, char**)
                             if (newPlayers.empty())
                             {
                                 practicetool.store(true);
-                                LCU_LOG("Gamemode is practice tool, skipping player info");
+                                QWACK_LOG("Gamemode is practice tool, skipping player info");
                             }
 
                             if (!practicetool.load())
@@ -377,7 +395,7 @@ int main(int, char**)
                                     //           << " rank: " << p.rank << " role: " << p.role
                                     //           << " team: " << p.team << std::endl;
                                 }
-                                LCU_LOG("Success");
+                                QWACK_LOG("Successfully loaded players.");
                                 practicetool.store(false);
                             }
                             playersLoaded.store(true);
@@ -426,6 +444,12 @@ int main(int, char**)
 
                         currentGold.store(gold, std::memory_order_relaxed);
                         gameTime.store(time, std::memory_order_relaxed);
+
+                        // Item price polling
+
+                        // auto now = std::chrono::steady_clock::now();
+                        // if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll).count() > delayS)
+                        poller.getPlayerItemSum();
                     }
                     else
                     {
@@ -437,12 +461,12 @@ int main(int, char**)
             }
             catch (const std::exception& e)
             {
-                std::cerr << "[LCU THREAD EXCEPTION] " << e.what() << std::endl;
+                LCU_LOG("[THREAD EXCEPTION] " << e.what());
                 running.store(false);
             }
             catch (...)
             {
-                std::cerr << "[LCU THREAD UNKNOWN EXCEPTION]" << std::endl;
+                LCU_LOG("[UNKNOWN THREAD EXCEPTION]");
                 running.store(false);
             }
         });
@@ -520,7 +544,7 @@ int main(int, char**)
                 practicetool.store(false);
                 csPerMin.store(0.0f);
 
-                LCU_LOG("In lobby. Waiting for game.");
+                QWACK_LOG("In lobby. Waiting for game.");
             }
         }
         else if (gameState.load() == gameState::INGAME)
@@ -529,7 +553,7 @@ int main(int, char**)
             {
                 inGame = true;
 
-                LCU_LOG("GLHF.");
+                QWACK_LOG("GLHF.");
             }
         }
 

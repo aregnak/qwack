@@ -27,8 +27,9 @@ public:
 
     // Using Live Client API (in game).
     void getPlayerRoleAndTeam(PlayerInfo&);
-    float getGameTime();
+    void getPlayerItemSum(PlayerInfo&);
     int getcs(const std::string&);
+    float getGameTime();
     float getGold();
 
     // Helper functions

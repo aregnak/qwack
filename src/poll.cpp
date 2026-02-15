@@ -77,10 +77,10 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
     // auto session = json::parse(body, nullptr, false);
 
     const std::string gameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
-    std::cout << "game mode: " << gameMode << std::endl;
+    LCU_LOG("Game mode: " << gameMode);
+
     if (gameMode != "PRACTICETOOL")
     {
-        std::cout << "Not practice tool yet." << std::endl;
         size_t i = 0;
         for (const auto& p : session["gameData"]["playerChampionSelections"])
         {
@@ -92,11 +92,12 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
             players[i].champID = p["championId"];
             i++;
         }
-        std::cout << "done" << std::endl;
+
+        LCU_LOG("Finished getting session info.");
     }
     else
     {
-        std::cout << "practice tool." << std::endl;
+        LCU_LOG("Skipped session info.");
         players.clear();
     }
 }
@@ -124,6 +125,8 @@ std::string poll::getPlayerName(LCUClient& lcu, const std::string puuid)
 
     std::stringstream nstream;
     nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
+
+    LCU_LOG("Summoner found: " << nstream.str());
 
     return nstream.str();
 }
@@ -177,10 +180,26 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
     }
 }
 
-float poll::getGameTime()
+void poll::getPlayerItemSum(PlayerInfo& player)
 {
-    return gameDataCache["gameData"]["gameTime"];
-    //
+    auto body = loadJsonFile("./allgamedata2.json");
+
+    auto gameData = json::parse(body, nullptr, false);
+
+    int itemsPrice = 0;
+    for (const auto& j : gameData["allPlayers"])
+    {
+        if (j["championName"] == player.champ)
+        {
+            for (const auto& i : j["items"])
+            {
+                int price = i["price"].get<int>();
+                itemsPrice += price;
+            }
+            LCU_LOG("Player: " << j["championName"] << " Item Total: " << itemsPrice);
+            break;
+        }
+    }
 }
 
 int poll::getcs(const std::string& playerName)
@@ -195,6 +214,12 @@ int poll::getcs(const std::string& playerName)
     }
 
     return cs;
+}
+
+float poll::getGameTime()
+{
+    return gameDataCache["gameData"]["gameTime"];
+    //
 }
 
 float poll::getGold()

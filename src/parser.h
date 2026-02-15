@@ -8,7 +8,9 @@
 #include <vector>
 #include <sstream>
 
-#define LCU_LOG(x) std::cout << "[LCU] " << x << std::endl
+#ifndef LCU_LOG
+#define LCU_LOG(x) std::cerr << "[LCU] " << x << std::endl
+#endif
 
 struct LCUInfo
 {
