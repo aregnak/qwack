@@ -591,8 +591,7 @@ int main(int, char**)
 
             ImGui::Begin("cspm", nullptr,
                          ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                             ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
-                             ImGuiWindowFlags_NoSavedSettings |
+                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                              ImGuiWindowFlags_NoFocusOnAppearing);
 
             if (csPerMin.load() < 0.0f)
@@ -616,8 +615,7 @@ int main(int, char**)
                 ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
                 ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
                              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
-                                 ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                                  ImGuiWindowFlags_NoFocusOnAppearing);
 
                 ImGui::Text("test");
@@ -637,8 +635,7 @@ int main(int, char**)
                 ImGui::SetNextWindowSize(rankSize, ImGuiCond_Always);
                 ImGui::Begin(("RankedWindow##" + std::to_string(num)).c_str(), nullptr,
                              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
-                                 ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                                  ImGuiWindowFlags_NoFocusOnAppearing);
 
                 ImGui::Text(ranks[num].c_str());
@@ -654,6 +651,9 @@ int main(int, char**)
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
         g_pSwapChain->Present(1, 0); // With vsync
+
+        // Limit to 30 fps.
+        SDL_Delay(33);
     }
 
     // Cleanup
