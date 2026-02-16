@@ -248,16 +248,15 @@ int main(int, char**)
         }
     }
 
-    ImVec2 itemSumSize = ImVec2(130, 30);
+    ImVec2 itemSumSize = ImVec2(70, 30);
     std::vector<ImVec2> itemPoss(5);
 
     for (int i = 0; i < itemPoss.size(); i++)
     {
         // Order team ranks
-        if (i < 5)
-        {
-            rankPoss[i] = ImVec2(screenWidth / 5.5f, screenHeight / 3.3f + (i * 80));
-        }
+        // Screen width: centered, screen height: every whatever amount is down there, it works.
+        itemPoss[i] =
+            ImVec2((screenWidth / 2.0f) - (itemSumSize.x / 2.0f), screenHeight / 3.3f + (i * 80));
     }
 
     LCUInfo lcu;
@@ -449,7 +448,7 @@ int main(int, char**)
 
                         // auto now = std::chrono::steady_clock::now();
                         // if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll).count() > delayS)
-                        poller.getPlayerItemSum();
+                        // poller.getPlayerItemSum();
                     }
                     else
                     {
@@ -605,6 +604,26 @@ int main(int, char**)
                 ImGui::Text("CS/min: %.2f", csDisplay);
             }
             ImGui::End();
+        }
+
+        // Item diff overlay
+        {
+            int num = 0;
+            for (const auto& pos : itemPoss)
+            {
+                ImGui::SetNextWindowBgAlpha(0.4f);
+                ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+                ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
+                ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
+                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                 ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove |
+                                 ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoFocusOnAppearing);
+
+                ImGui::Text("test");
+                ImGui::End();
+                num++;
+            }
         }
 
         // Ranks overlay

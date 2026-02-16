@@ -182,12 +182,12 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
 
 void poll::getPlayerItemSum(PlayerInfo& player)
 {
-    auto body = loadJsonFile("./allgamedata2.json");
+    // auto body = loadJsonFile("./allgamedata2.json");
 
-    auto gameData = json::parse(body, nullptr, false);
+    // auto gameData = json::parse(body, nullptr, false);
 
     int itemsPrice = 0;
-    for (const auto& j : gameData["allPlayers"])
+    for (const auto& j : gameDataCache["allPlayers"])
     {
         if (j["championName"] == player.champ)
         {
