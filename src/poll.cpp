@@ -197,6 +197,7 @@ void poll::getPlayerItemSum(PlayerInfo& player)
                 itemsPrice += price;
             }
             LCU_LOG("Player: " << j["championName"] << " Item Total: " << itemsPrice);
+            player.itemsPrice = itemsPrice;
             break;
         }
     }

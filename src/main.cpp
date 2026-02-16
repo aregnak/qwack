@@ -308,6 +308,7 @@ int main(int, char**)
 
     std::vector<std::string> ranks;
     std::vector<PlayerInfo> players(10);
+    std::vector<int> itemGoldDiff(5);
     std::mutex dataMutex;
 
     std::atomic<float> csPerMin = -1.0f;
@@ -445,10 +446,28 @@ int main(int, char**)
                         gameTime.store(time, std::memory_order_relaxed);
 
                         // Item price polling
+                        if (!practicetool)
+                        {
+                            auto now = std::chrono::steady_clock::now();
 
-                        // auto now = std::chrono::steady_clock::now();
-                        // if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll).count() > delayS)
-                        // poller.getPlayerItemSum();
+                            std::lock_guard<std::mutex> lock(dataMutex);
+
+                            if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll)
+                                    .count() > 2)
+                            {
+                                for (size_t i = 0; i < players.size() / 2; i++)
+                                {
+                                    PlayerInfo& currentPlayer = players[i];
+                                    PlayerInfo& laneOpponent = players[i + 5];
+
+                                    poller.getPlayerItemSum(currentPlayer);
+                                    poller.getPlayerItemSum(laneOpponent);
+
+                                    itemGoldDiff[i] =
+                                        (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
+                                }
+                            }
+                        }
                     }
                     else
                     {
@@ -474,7 +493,7 @@ int main(int, char**)
     SDL_Event event;
     bool inGame = true;
     bool windowHidden = false;
-    bool showRanks = false;
+    bool tabDown = false;
 
     while (running.load())
     {
@@ -522,11 +541,11 @@ int main(int, char**)
         {
             if (!windowHidden && IsTabDown())
             {
-                showRanks = true;
+                tabDown = true;
             }
             else
             {
-                showRanks = false;
+                tabDown = false;
             }
         }
 
@@ -605,27 +624,8 @@ int main(int, char**)
             ImGui::End();
         }
 
-        // Item diff overlay
-        {
-            int num = 0;
-            for (const auto& pos : itemPoss)
-            {
-                ImGui::SetNextWindowBgAlpha(0.4f);
-                ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-                ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
-                ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
-                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                                 ImGuiWindowFlags_NoFocusOnAppearing);
-
-                ImGui::Text("test");
-                ImGui::End();
-                num++;
-            }
-        }
-
-        // Ranks overlay
-        if (showRanks)
+        // Ranks & item gold diff overlay
+        if (tabDown)
         {
             int num = 0;
             for (const auto& pos : rankPoss)
@@ -639,6 +639,22 @@ int main(int, char**)
                                  ImGuiWindowFlags_NoFocusOnAppearing);
 
                 ImGui::Text(ranks[num].c_str());
+                ImGui::End();
+                num++;
+            }
+
+            num = 0;
+            for (const auto& pos : itemPoss)
+            {
+                ImGui::SetNextWindowBgAlpha(0.4f);
+                ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+                ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
+                ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
+                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoFocusOnAppearing);
+
+                ImGui::Text("%d", itemGoldDiff[num]);
                 ImGui::End();
                 num++;
             }
