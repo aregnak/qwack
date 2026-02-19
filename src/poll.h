@@ -40,10 +40,12 @@ public:
 
 private:
     void getChampionList();
+    void getItemList();
 
     httplib::SSLClient cli;
     httplib::Result res;
 
     nlohmann::json championDataCache;
     nlohmann::json gameDataCache;
+    nlohmann::json itemDataCache;
 };

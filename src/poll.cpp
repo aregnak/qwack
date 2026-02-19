@@ -12,6 +12,7 @@ poll::poll()
     cli.enable_server_certificate_verification(false);
 
     getChampionList();
+    getItemList();
 }
 
 bool poll::update()
@@ -125,8 +126,6 @@ std::string poll::getPlayerName(LCUClient& lcu, const std::string puuid)
 
     std::stringstream nstream;
     nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
-
-    LCU_LOG("Summoner found: " << nstream.str());
 
     return nstream.str();
 }
@@ -285,10 +284,48 @@ void poll::getChampionList()
     championDataCache = json::parse(cres->body, nullptr, false);
     if (championDataCache.is_discarded())
     {
-        LCU_LOG("Failed to parse ddragon versions.");
+        LCU_LOG("Failed to parse ddragon champions.");
     }
     else
     {
         LCU_LOG("Successfully loaded champions, version: " + currentVersion);
+    }
+}
+
+void poll::getItemList()
+{
+    httplib::Client cli("https://ddragon.leagueoflegends.com");
+
+    // Get current game version.
+    auto res = cli.Get("/api/versions.json");
+    if (!res || res->status != 200)
+    {
+        LCU_LOG("Failed to load ddragon versions.");
+    }
+
+    auto versions = json::parse(res->body, nullptr, false);
+    if (versions.is_discarded())
+    {
+        LCU_LOG("Failed to parse ddragon versions.");
+    }
+
+    std::string currentVersion = versions[0];
+
+    // Get champion list based on current version.
+    auto cres = cli.Get("/cdn/" + currentVersion + "/data/en_US/item.json");
+
+    if (!cres || cres->status != 200)
+    {
+        LCU_LOG("Failed to load ddragon items.");
+    }
+
+    itemDataCache = json::parse(cres->body, nullptr, false);
+    if (itemDataCache.is_discarded())
+    {
+        LCU_LOG("Failed to parse ddragon items.");
+    }
+    else
+    {
+        LCU_LOG("Successfully loaded items, version: " + currentVersion);
     }
 }

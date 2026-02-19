@@ -278,8 +278,7 @@ int main(int, char**)
                 {
                     delayS += 10;
                 }
-
-                std::cout << "Waiting for League client (open it...)" << std::endl;
+                LCU_LOG("Waiting for League client (open it...)");
 
                 lcu = parseLockfile();
                 lastPoll = now;
@@ -305,6 +304,7 @@ int main(int, char**)
             lastPoll = now;
         }
     }
+    LCU_LOG("Summoner found: " << playerName);
 
     std::vector<std::string> ranks;
     std::vector<PlayerInfo> players(10);
