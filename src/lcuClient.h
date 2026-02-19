@@ -6,9 +6,11 @@
 class LCUClient
 {
 public:
-    explicit LCUClient(const LCUInfo& lcu)
-        : _client("127.0.0.1", lcu.port)
+    LCUClient() = default;
+
+    void connect(const LCUInfo& lcu)
     {
+        _client = std::make_unique<httplib::SSLClient>("127.0.0.1", lcu.port);
         _client.enable_server_certificate_verification(false);
 
         std::stringstream ss;
@@ -18,14 +20,21 @@ public:
         _header = { { "Authorization", "Basic " + _auth } };
     }
 
+    const bool isConnected()
+    {
+        return _client != nullptr;
+        //
+    }
+
     httplib::Result get(const std::string& path)
     {
-        return _client.Get(path.c_str(), _header);
+        return _client->Get(path.c_str(), _header);
         //
     }
 
 private:
-    httplib::SSLClient _client;
+    // This is a unique pointer because SSLClient is non copyable.
+    std::unique_ptr<httplib::SSLClient> _client;
     httplib::Headers _header;
     std::string _auth;
 };
