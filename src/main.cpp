@@ -285,6 +285,8 @@ int main(int, char**)
             int totalCS = 0;
             float lastGold = 500.0f;
 
+            bool printedWaitingForClient = false;
+
             try
             {
                 while (running.load())
@@ -293,33 +295,41 @@ int main(int, char**)
 
                     if (!std::filesystem::exists("C:\\Riot Games\\League of Legends\\lockfile"))
                     {
-                        LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
                         if (gameState.load() != gameState::CLOSED)
                         {
+                            NEWLINE;
+                            LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
+
                             gameState.store(gameState::CLOSED);
                             LCU_LOG("State is closed.");
                         }
-                        std::this_thread::sleep_for(std::chrono::seconds(10));
+
+                        printedWaitingForClient = false;
                     }
 
                     if (gameState.load() == gameState::CLOSED)
                     {
                         LCUInfo lcu;
 
-                        while (lcu.port == 0)
+                        while (running.load() && lcu.port == 0)
                         {
-                            LCU_LOG("Waiting for League client (open it...)");
+                            if (!printedWaitingForClient)
+                            {
+                                LCU_LOG("Waiting for League client (open it...)");
+                                printedWaitingForClient = true;
+                            }
+
                             lcu = parseLockfile();
 
                             if (lcu.port == 0)
                             {
-                                std::this_thread::sleep_for(std::chrono::seconds(5));
+                                std::this_thread::sleep_for(std::chrono::seconds(10));
                             }
                         }
 
                         lcuC.connect(lcu);
 
-                        while (playerName.empty())
+                        while (running.load() && playerName.empty())
                         {
                             playerName = poller.getCurrentSummoner(lcuC);
 
@@ -327,12 +337,14 @@ int main(int, char**)
                             {
                                 std::this_thread::sleep_for(std::chrono::seconds(5));
                             }
+                            else
+                            {
+                                LCU_LOG("Summoner found: " << playerName);
+
+                                gameState.store(gameState::LOBBY);
+                                LCU_LOG("State is lobby after getting LCU info.");
+                            }
                         }
-
-                        LCU_LOG("Summoner found: " << playerName);
-
-                        gameState.store(gameState::LOBBY);
-                        LCU_LOG("State is lobby after getting LCU info.");
                     }
 
                     if (poller.update())
@@ -519,6 +531,7 @@ int main(int, char**)
         // CTRL+C doesn't really work, I think because the window is unfocusable.
         if (killSwitch())
         {
+            QWACK_LOG("Killswitch activated. Exiting.");
             running.store(false);
         }
 

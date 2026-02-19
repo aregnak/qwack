@@ -8,4 +8,4 @@
 #define QWACK_LOG(x) std::cout << "[Qwack] " << x << std::endl
 
 // If you're reading this you know what this does.
-#define NEWL std::cout << "\n";
+#define NEWLINE std::cout << "\n";
