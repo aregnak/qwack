@@ -11,7 +11,7 @@ public:
     void connect(const LCUInfo& lcu)
     {
         _client = std::make_unique<httplib::SSLClient>("127.0.0.1", lcu.port);
-        _client.enable_server_certificate_verification(false);
+        _client->enable_server_certificate_verification(false);
 
         std::stringstream ss;
         ss << "riot:" << lcu.password;

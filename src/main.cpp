@@ -1,4 +1,5 @@
 #include <mutex>
+#include <thread>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #define _WIN32_WINNT 0x0A00
@@ -12,6 +13,7 @@
 #include <algorithm>
 #include <future>
 #include <atomic>
+#include <filesystem>
 // #include <dxgi1_2.h>
 
 #include <SDL.h>
@@ -259,53 +261,6 @@ int main(int, char**)
             ImVec2((screenWidth / 2.0f) - (itemSumSize.x / 2.0f), screenHeight / 3.3f + (i * 80));
     }
 
-    LCUInfo lcu;
-    auto lastPoll = std::chrono::steady_clock::now();
-
-    // This section has its own scope because the variables created are only needed here.
-    // But this program will only "work" once, especially fetching and parsing the lockfile.
-    // TODO: League client state fetching (closed, open, in game...).
-    {
-        int pollCounter = 1;
-        int delayS = 1; // Delay in seconds, 0 to poll instantly the first time.
-
-        while (lcu.port == 0)
-        {
-            auto now = std::chrono::steady_clock::now();
-            if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll).count() > delayS)
-            {
-                if (pollCounter % 30 == 0 && pollCounter < 180)
-                {
-                    delayS += 10;
-                }
-                LCU_LOG("Waiting for League client (open it...)");
-
-                lcu = parseLockfile();
-                lastPoll = now;
-                pollCounter++;
-            }
-        }
-    }
-
-    poll poller;
-
-    LCUClient lcuC(lcu);
-
-    std::string playerName;
-    lastPoll = std::chrono::steady_clock::now();
-    while (playerName.empty())
-    {
-        auto now = std::chrono::steady_clock::now();
-
-        // 2 second delaay to let the API start.
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPoll).count() > 2000)
-        {
-            playerName = poller.getCurrentSummoner(lcuC);
-            lastPoll = now;
-        }
-    }
-    LCU_LOG("Summoner found: " << playerName);
-
     std::vector<std::string> ranks;
     std::vector<PlayerInfo> players(10);
     std::vector<int> itemGoldDiff(5);
@@ -318,7 +273,15 @@ int main(int, char**)
     std::atomic<bool> practicetool = false;
     std::atomic<bool> playersLoaded = false;
 
-    std::atomic<gameState> gameState = gameState::LOBBY;
+    // Initial game state of closed (league not open).
+    std::atomic<gameState> gameState = gameState::CLOSED;
+
+    auto lastPoll = std::chrono::steady_clock::now();
+
+    poll poller;
+
+    LCUClient lcuC;
+    std::string playerName;
 
     // Polling thread.
     std::thread lcuThread(
@@ -334,9 +297,55 @@ int main(int, char**)
             {
                 while (running.load())
                 {
+                    // std::ifstream file("C:\\Riot Games\\League of Legends\\lockfile");
+
+                    if (!std::filesystem::exists("C:\\Riot Games\\League of Legends\\lockfile"))
+                    {
+                        LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
+                        if (gameState.load() != gameState::CLOSED)
+                        {
+                            gameState.store(gameState::CLOSED);
+                            LCU_LOG("State is closed.");
+                        }
+                        std::this_thread::sleep_for(std::chrono::seconds(10));
+                    }
+
+                    if (gameState.load() == gameState::CLOSED)
+                    {
+                        LCUInfo lcu;
+
+                        while (lcu.port == 0)
+                        {
+                            LCU_LOG("Waiting for League client (open it...)");
+                            lcu = parseLockfile();
+
+                            if (lcu.port == 0)
+                            {
+                                std::this_thread::sleep_for(std::chrono::seconds(5));
+                            }
+                        }
+
+                        lcuC.connect(lcu);
+
+                        while (playerName.empty())
+                        {
+                            playerName = poller.getCurrentSummoner(lcuC);
+
+                            if (playerName.empty())
+                            {
+                                std::this_thread::sleep_for(std::chrono::seconds(5));
+                            }
+                        }
+
+                        LCU_LOG("Summoner found: " << playerName);
+
+                        gameState.store(gameState::LOBBY);
+                        LCU_LOG("State is lobby after getting LCU info.");
+                    }
+
                     if (poller.update())
                     {
-                        gameState = gameState::INGAME;
+                        gameState.store(gameState::INGAME);
 
                         if (!playersLoaded.load())
                         {
@@ -466,6 +475,7 @@ int main(int, char**)
                                     itemGoldDiff[i] =
                                         (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
                                 }
+                                lastPoll = now;
                             }
                         }
                     }
