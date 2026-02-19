@@ -3,6 +3,7 @@
 #include "playerInfo.h"
 #include <cstddef>
 #include <string>
+#include <thread>
 
 using json = nlohmann::json;
 
@@ -11,8 +12,16 @@ poll::poll()
 {
     cli.enable_server_certificate_verification(false);
 
+    // TODO: instead of this, save local copy of champion & item json
+    // TODO: and only check for version difference, then update jsons.
+    // std::thread(
+    //     [this]()
+    //     {
+    getGameVersion();
     getChampionList();
     getItemList();
+    // })
+    // .detach();
 }
 
 bool poll::update()
@@ -254,7 +263,7 @@ std::string poll::loadJsonFile(const std::string& path)
 }
 
 // Private
-void poll::getChampionList()
+void poll::getGameVersion()
 {
     httplib::Client cli("https://ddragon.leagueoflegends.com");
 
@@ -271,10 +280,15 @@ void poll::getChampionList()
         LCU_LOG("Failed to parse ddragon versions.");
     }
 
-    std::string currentVersion = versions[0];
+    gameVersion = versions[0];
+}
+
+void poll::getChampionList()
+{
+    httplib::Client cli("https://ddragon.leagueoflegends.com");
 
     // Get champion list based on current version.
-    auto cres = cli.Get("/cdn/" + currentVersion + "/data/en_US/champion.json");
+    auto cres = cli.Get("/cdn/" + gameVersion + "/data/en_US/champion.json");
 
     if (!cres || cres->status != 200)
     {
@@ -288,7 +302,7 @@ void poll::getChampionList()
     }
     else
     {
-        LCU_LOG("Successfully loaded champions, version: " + currentVersion);
+        LCU_LOG("Successfully loaded champions, version: " + gameVersion);
     }
 }
 
@@ -296,23 +310,8 @@ void poll::getItemList()
 {
     httplib::Client cli("https://ddragon.leagueoflegends.com");
 
-    // Get current game version.
-    auto res = cli.Get("/api/versions.json");
-    if (!res || res->status != 200)
-    {
-        LCU_LOG("Failed to load ddragon versions.");
-    }
-
-    auto versions = json::parse(res->body, nullptr, false);
-    if (versions.is_discarded())
-    {
-        LCU_LOG("Failed to parse ddragon versions.");
-    }
-
-    std::string currentVersion = versions[0];
-
     // Get champion list based on current version.
-    auto cres = cli.Get("/cdn/" + currentVersion + "/data/en_US/item.json");
+    auto cres = cli.Get("/cdn/" + gameVersion + "/data/en_US/item.json");
 
     if (!cres || cres->status != 200)
     {
@@ -326,6 +325,6 @@ void poll::getItemList()
     }
     else
     {
-        LCU_LOG("Successfully loaded items, version: " + currentVersion);
+        LCU_LOG("Successfully loaded items, version: " + gameVersion);
     }
 }

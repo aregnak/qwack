@@ -39,8 +39,11 @@ public:
     // void getPlayerGameInfo(StaticPlayer&);
 
 private:
+    void getGameVersion();
     void getChampionList();
     void getItemList();
+
+    std::string gameVersion;
 
     httplib::SSLClient cli;
     httplib::Result res;
