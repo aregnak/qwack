@@ -83,7 +83,13 @@ bool InitD3D(HWND hwnd)
     sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
     UINT createDeviceFlags = 0;
-    //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+
+// Use VS debug directive for now.
+#ifdef _DEBUG
+    // DX11 Graphics debug flags.
+    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif //DEBUG
+
     D3D_FEATURE_LEVEL featureLevel;
     const D3D_FEATURE_LEVEL featureLevelArray[2] = {
         D3D_FEATURE_LEVEL_11_0,
@@ -628,9 +634,10 @@ int main(int, char**)
             // ImGui::End();
         }
 
-        ImGui::SetNextWindowBgAlpha(0.4f);
         // CS/Min overlay
+        if (!windowHidden)
         {
+            ImGui::SetNextWindowBgAlpha(0.4f);
             ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
             ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
 
