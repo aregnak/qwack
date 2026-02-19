@@ -28,15 +28,7 @@
 #include "httplib.h"
 #include "json.hpp"
 
-// Debug prints
-#ifndef LCU_LOG
-#define LCU_LOG(x) std::cerr << "[LCU] " << x << std::endl
-#endif
-
-#ifndef QWACK_LOG
-#define QWACK_LOG(x) std::cout << "[Qwack] " << x << std::endl
-#endif
-
+#include "debugPrints.h"
 #include "game.h"
 #include "poll.h"
 #include "parser.h"
