@@ -12,16 +12,10 @@ poll::poll()
 {
     cli.enable_server_certificate_verification(false);
 
-    // TODO: instead of this, save local copy of champion & item json
-    // TODO: and only check for version difference, then update jsons.
-    // std::thread(
-    //     [this]()
-    //     {
+    // This is done fast enough not to need its own thread or local data.
     getGameVersion();
     getChampionList();
     getItemList();
-    // })
-    // .detach();
 }
 
 bool poll::update()

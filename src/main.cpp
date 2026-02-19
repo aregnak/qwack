@@ -171,8 +171,7 @@ int main(int, char**)
         SystemParametersInfo(SPI_GETWORKAREA, 0, &workArea, 0);
         screenWidth = workArea.right - workArea.left;
         screenHeight = workArea.bottom - workArea.top;
-        std::cout << "Primary screen work area: " << screenWidth << "x" << screenHeight
-                  << std::endl;
+        QWACK_LOG("Primary screen work area: " << screenWidth << "x" << screenHeight);
     }
 
     SDL_WindowFlags window_flags =
@@ -218,11 +217,17 @@ int main(int, char**)
 
     ImGui_ImplSDL3_InitForD3D(window);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
+    // Finish all DX11, SDL, and ImGui setup.
+
+    // Friendly welcome message!
+    NEWLINE;
+    QWACK_LOG("Thank you for choosing (or being forced to) try my program, Enjoy!");
+    NEWLINE;
 
     // CS/min screen. Static until I add dynamic placement.
     ImVec2 cspmSize = ImVec2(120, 30);
     ImVec2 cspmPos = ImVec2((screenWidth - (cspmSize.x * 1.2)), screenHeight / 2.5);
-    std::cout << "CS/Min overlay pos: " << cspmPos.x << " " << cspmPos.y << std::endl;
+    QWACK_LOG("CS/Min overlay pos: " << cspmPos.x << " " << cspmPos.y);
 
     ImVec2 rankSize = ImVec2(30, 30);
     std::vector<ImVec2> rankPoss(10);
@@ -268,17 +273,17 @@ int main(int, char**)
     // Initial game state of closed (league not open).
     std::atomic<gameState> gameState = gameState::CLOSED;
 
-    auto lastPoll = std::chrono::steady_clock::now();
-
-    poll poller;
-
-    LCUClient lcuC;
-    std::string playerName;
-
     // Polling thread.
     std::thread lcuThread(
         [&]()
         {
+            auto lastPoll = std::chrono::steady_clock::now();
+
+            poll poller;
+
+            LCUClient lcuC;
+            std::string playerName;
+
             int currentCS = 0;
             int lastCS = 0;
             int estimatedCS = 0;
@@ -291,22 +296,23 @@ int main(int, char**)
             {
                 while (running.load())
                 {
-                    // std::ifstream file("C:\\Riot Games\\League of Legends\\lockfile");
-
                     if (!std::filesystem::exists("C:\\Riot Games\\League of Legends\\lockfile"))
                     {
                         if (gameState.load() != gameState::CLOSED)
                         {
+                            gameState.store(gameState::CLOSED);
+                            playerName = std::string();
+
                             NEWLINE;
                             LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
-
-                            gameState.store(gameState::CLOSED);
-                            LCU_LOG("State is closed.");
                         }
 
                         printedWaitingForClient = false;
                     }
 
+                    // Lobby state is currently handled in main thread.
+
+                    // League client is closed.
                     if (gameState.load() == gameState::CLOSED)
                     {
                         LCUInfo lcu;
@@ -342,11 +348,11 @@ int main(int, char**)
                                 LCU_LOG("Summoner found: " << playerName);
 
                                 gameState.store(gameState::LOBBY);
-                                LCU_LOG("State is lobby after getting LCU info.");
                             }
                         }
                     }
 
+                    // State is in game (INGAME).
                     if (poller.update())
                     {
                         gameState.store(gameState::INGAME);
@@ -505,7 +511,7 @@ int main(int, char**)
 
     // Main thread.
     SDL_Event event;
-    bool inGame = true;
+    bool inLobby = true;
     bool windowHidden = false;
     bool tabDown = false;
 
@@ -564,11 +570,12 @@ int main(int, char**)
             }
         }
 
+        // Lobby state (Client open, not in game)
         if (gameState.load() == gameState::LOBBY)
         {
-            if (inGame)
+            if (!inLobby)
             {
-                inGame = false;
+                inLobby = true;
 
                 ranks.clear();
                 players = std::vector<PlayerInfo>(10);
@@ -582,12 +589,16 @@ int main(int, char**)
         }
         else if (gameState.load() == gameState::INGAME)
         {
-            if (!inGame)
+            if (inLobby)
             {
-                inGame = true;
+                inLobby = false;
 
                 QWACK_LOG("GLHF.");
             }
+        }
+        else if (gameState.load() == gameState::CLOSED)
+        {
+            inLobby = false;
         }
 
         // std::cout << "\n" << std::endl;
