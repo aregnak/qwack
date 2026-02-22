@@ -53,5 +53,8 @@ inline int romanToInt(const std::string& roman)
         return 3;
     if (roman == "IV")
         return 4;
-    return -1; // NA / invalid
+    if (roman == "NA")
+        return 0;
+
+    return -1; // invalid
 }
