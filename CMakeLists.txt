@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(lol_cs_counter)
+project(qwack)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,7 +17,7 @@ include_directories("${CMAKE_SOURCE_DIR}/libs/json")
 # SDL lib directory (x64 build)
 link_directories("${CMAKE_SOURCE_DIR}/libs/SDL3/lib")
 
-add_executable(lol_cs_counter
+add_executable(qwack
     src/main.cpp
     src/poll.cpp
     libs/imgui/imgui.cpp
@@ -28,7 +28,7 @@ add_executable(lol_cs_counter
     libs/imgui/imgui_impl_dx11.cpp
 )
 
-target_link_libraries(lol_cs_counter PRIVATE
+target_link_libraries(qwack PRIVATE
     SDL3.lib
     d3d11.lib
     dxgi.lib
