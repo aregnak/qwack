@@ -408,7 +408,13 @@ int main(int, char**)
                                     if (tierNumber != -1)
                                     {
                                         std::ostringstream oss;
-                                        oss << rankLetter << tierNumber;
+                                        oss << rankLetter;
+
+                                        // If rank doesn't contain tiers (Master+).
+                                        if (tierNumber != 0)
+                                        {
+                                            oss << tierNumber;
+                                        }
                                         newRanks.push_back(oss.str());
                                     }
                                     else
@@ -416,9 +422,9 @@ int main(int, char**)
                                         newRanks.push_back("");
                                     }
 
-                                    // std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID
-                                    //           << " rank: " << p.rank << " role: " << p.role
-                                    //           << " team: " << p.team << std::endl;
+                                    std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID
+                                              << " rank: " << p.rank << " role: " << p.role
+                                              << " team: " << p.team << std::endl;
                                 }
                                 QWACK_LOG("Successfully loaded players.");
                                 practicetool.store(false);
