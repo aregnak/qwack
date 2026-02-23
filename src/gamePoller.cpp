@@ -1,4 +1,5 @@
 #include "gamePoller.h"
+#include "game.h"
 #include "lcuClient.h"
 #include "playerInfo.h"
 #include "debugPrints.h"
@@ -32,7 +33,97 @@ void handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& ga
         {
             lcuPoller::getPlayerName(gameState, lcuC, poller, playerName);
         }
+
+        gameState.store(gameState::LOBBY);
     }
+}
+
+void handleLobbyState(std::atomic<gameState>& gameState, poll& poller)
+{
+    if (poller.update())
+    {
+        // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
+        // This makes the INGAME state really mean loaded into the game, not just loading screen.
+        if (poller.getGameTime() > 0.5f)
+        {
+            gameState.store(gameState::INGAME);
+        }
+    }
+}
+
+void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
+                       std::vector<std::string>& ranks, poll& poller, std::atomic<float>& csPerMin,
+                       std::atomic<gameState>& gameState, std::atomic<bool>& playersLoaded,
+                       std::atomic<bool>& practicetool, std::string& playerName,
+                       std::mutex& dataMutex)
+{
+    static int currentCS = 0;
+
+    if (!playersLoaded.load())
+    {
+        std::vector<PlayerInfo> newPlayers(10);
+        std::vector<std::string> newRanks;
+        LCU_LOG("Polling Player Info...");
+
+        poller.getSessionInfo(lcuC, newPlayers);
+
+        if (newPlayers.empty())
+        {
+            practicetool.store(true);
+            QWACK_LOG("Gamemode is practice tool, skipping player info");
+        }
+
+        if (!practicetool.load())
+        {
+            lcuPoller::getSessionPlayers(newPlayers, newRanks, poller, lcuC);
+        }
+        playersLoaded.store(true);
+
+        std::lock_guard<std::mutex> lock(dataMutex);
+
+        players = std::move(newPlayers);
+        ranks = std::move(newRanks);
+    }
+
+    currentCS = poller.getcs(playerName);
+    float gold = poller.getGold();
+    float time = poller.getGameTime();
+
+    // Minons spawn after 30 seconds, no need to measure anything before that.
+    lcuPoller::getCSPM(csPerMin, currentCS, time, gold);
+    // The cs/min counter will always be an approximation because the API updates the number
+    // every 10 cs, this algorithm will somewhat smoothen that out, but any
+
+    // currentGold.store(gold, std::memory_order_relaxed);
+    // gameTime.store(time, std::memory_order_relaxed);
+
+    // Item price polling
+    // if (!practicetool)
+    // {
+    //     auto now = std::chrono::steady_clock::now();
+
+    //     std::lock_guard<std::mutex> lock(dataMutex);
+
+    //     if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll)
+    //             .count() > 2)
+    //     {
+    //         for (size_t i = 0; i < players.size() / 2; i++)
+    //         {
+    //             PlayerInfo& currentPlayer = players[i];
+    //             PlayerInfo& laneOpponent = players[i + 5];
+
+    //             poller.getPlayerItems(currentPlayer);
+    //             poller.getPlayerItems(laneOpponent);
+
+    // poller.getPlayerItemSum(currentPlayer);
+    // poller.getPlayerItemSum(laneOpponent);
+
+    // itemGoldDiff[i] =
+    //     (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
+    //         }
+    //         lastPoll = now;
+    //     }
+    // }
 }
 
 void connectToLCU(LCUInfo& lcu)
@@ -106,4 +197,42 @@ void getSessionPlayers(std::vector<PlayerInfo>& newPlayers, std::vector<std::str
     }
     QWACK_LOG("Successfully loaded players.");
 }
+
+void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold)
+{
+    static int lastCS = 0;
+    static int estimatedCS = 0;
+    static int totalCS = 0;
+    static float lastGold = 0.0f;
+
+    if (time >= 30.0f)
+    {
+        // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
+        if (lastCS == currentCS)
+        {
+            if (gold - lastGold > 14.0f)
+            {
+                estimatedCS++;
+            }
+            // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
+            lastGold = gold;
+        }
+        else
+        {
+            lastCS = currentCS;
+            estimatedCS = 0;
+        }
+
+        totalCS = estimatedCS + currentCS;
+
+        // This is really just to make it a slight bit more accurate in case
+        // something triggers a lot of additional "cs" but in reality it is something else.
+        if (totalCS - currentCS > 10)
+        {
+            estimatedCS--;
+        }
+        csPerMin.store(totalCS / (time / 60.0f), std::memory_order_relaxed);
+    }
+}
+
 } // namespace lcuPoller
