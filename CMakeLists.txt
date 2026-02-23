@@ -20,6 +20,7 @@ link_directories("${CMAKE_SOURCE_DIR}/libs/SDL3/lib")
 add_executable(qwack
     src/main.cpp
     src/poll.cpp
+    src/gamePoller.cpp
     libs/imgui/imgui.cpp
     libs/imgui/imgui_draw.cpp
     libs/imgui/imgui_tables.cpp
@@ -27,6 +28,8 @@ add_executable(qwack
     libs/imgui/imgui_impl_sdl3.cpp
     libs/imgui/imgui_impl_dx11.cpp
 )
+
+target_compile_definitions(qwack PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
 
 target_link_libraries(qwack PRIVATE
     SDL3.lib
