@@ -303,14 +303,6 @@ int main(int, char**)
             {
                 while (running.load())
                 {
-                    // switch (gameState.load())
-                    // {
-                    //         case gameState::CLOSED;
-
-                    //         case gameState::LOBBY;
-
-                    //         case gameState::INGAME;
-                    //     }
                     if (!std::filesystem::exists("C:\\Riot Games\\League of Legends\\lockfile"))
                     {
                         if (gameState.load() != gameState::CLOSED)
@@ -326,35 +318,18 @@ int main(int, char**)
                         printedWaitingForClient = false;
                     }
 
-                    // Lobby state is currently handled in main thread.
-
-                    // League client is closed.
-                    if (gameState.load() == gameState::CLOSED)
+                    switch (gameState.load())
                     {
-                        LCUInfo lcu;
+                        case gameState::CLOSED:
+                            lcuPoller::handleClosedState(lcuC, poller, gameState, running,
+                                                         playerName, printedWaitingForClient);
+                            break;
 
-                        while (running.load() && lcu.port == 0)
-                        {
-                            if (!printedWaitingForClient)
-                            {
-                                LCU_LOG("Waiting for League client (open it...)");
-                                printedWaitingForClient = true;
-                            }
+                            //     case gameState::LOBBY:
 
-                            lcuPoller::connectToLCU(lcu);
-                        }
-
-                        lcuC.connect(lcu);
-
-                        // Get player name
-                        while (running.load() && playerName.empty())
-                        {
-                            lcuPoller::getPlayerName(gameState, lcuC, poller, playerName);
-                            QWACK_LOG("Summoner found: " << playerName);
-                        }
+                            // case gameState::INGAME:
                     }
 
-                    // State is in game (INGAME).
                     if (poller.update())
                     {
                         // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.

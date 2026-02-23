@@ -1,9 +1,40 @@
 #include "gamePoller.h"
 #include "lcuClient.h"
 #include "playerInfo.h"
+#include "debugPrints.h"
 
 namespace lcuPoller
 {
+
+void handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& gameState,
+                       std::atomic<bool>& running, std::string& playerName,
+                       bool& printedWaitingForClient)
+{
+    if (gameState.load() == gameState::CLOSED)
+    {
+        LCUInfo lcu;
+
+        while (running.load() && lcu.port == 0)
+        {
+            if (!printedWaitingForClient)
+            {
+                LCU_LOG("Waiting for League client (open it...)");
+                printedWaitingForClient = true;
+            }
+
+            lcuPoller::connectToLCU(lcu);
+        }
+
+        lcuC.connect(lcu);
+
+        // Get player name
+        while (running.load() && playerName.empty())
+        {
+            lcuPoller::getPlayerName(gameState, lcuC, poller, playerName);
+        }
+    }
+}
+
 void connectToLCU(LCUInfo& lcu)
 {
     lcu = parseLockfile();
@@ -26,6 +57,7 @@ void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC, poll& pol
     else
     {
         gameState.store(gameState::LOBBY);
+        QWACK_LOG("Summoner found: " << playerName);
     }
 }
 
