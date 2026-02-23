@@ -407,16 +407,6 @@ int main(int, char**)
             inLobby = false;
         }
 
-        // std::cout << "\n" << std::endl;
-        // LCU_LOG("Gold delta: " << currentGold - lastGold);
-        // LCU_LOG("Last Gold: " << lastGold);
-        // LCU_LOG("Current Gold: " << currentGold);
-        // std::cout << "\n" << std::endl;
-
-        // LCU_LOG("Total CS: " << totalCS);
-        // LCU_LOG("Last CS: " << lastCS);
-        // LCU_LOG("CS/min: " << csPerMin);
-
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplSDL3_NewFrame();

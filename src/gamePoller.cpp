@@ -59,71 +59,79 @@ void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
 {
     static int currentCS = 0;
 
-    if (!playersLoaded.load())
+    if (poller.update())
     {
-        std::vector<PlayerInfo> newPlayers(10);
-        std::vector<std::string> newRanks;
-        LCU_LOG("Polling Player Info...");
-
-        poller.getSessionInfo(lcuC, newPlayers);
-
-        if (newPlayers.empty())
+        if (!playersLoaded.load())
         {
-            practicetool.store(true);
-            QWACK_LOG("Gamemode is practice tool, skipping player info");
+            std::vector<PlayerInfo> newPlayers(10);
+            std::vector<std::string> newRanks;
+            LCU_LOG("Polling Player Info...");
+
+            poller.getSessionInfo(lcuC, newPlayers);
+
+            if (newPlayers.empty())
+            {
+                practicetool.store(true);
+                QWACK_LOG("Gamemode is practice tool, skipping player info");
+            }
+
+            if (!practicetool.load())
+            {
+                lcuPoller::getSessionPlayers(newPlayers, newRanks, poller, lcuC);
+            }
+            playersLoaded.store(true);
+
+            std::lock_guard<std::mutex> lock(dataMutex);
+
+            players = std::move(newPlayers);
+            ranks = std::move(newRanks);
         }
 
-        if (!practicetool.load())
-        {
-            lcuPoller::getSessionPlayers(newPlayers, newRanks, poller, lcuC);
-        }
-        playersLoaded.store(true);
+        currentCS = poller.getcs(playerName);
+        float gold = poller.getGold();
+        float time = poller.getGameTime();
 
-        std::lock_guard<std::mutex> lock(dataMutex);
+        LCU_LOG("Current cs: " << currentCS << " time: " << time << " Gold: " << gold);
+        // Minons spawn after 30 seconds, no need to measure anything before that.
+        lcuPoller::getCSPM(csPerMin, currentCS, time, gold);
+        // The cs/min counter will always be an approximation because the API updates the number
+        // every 10 cs, this algorithm will somewhat smoothen that out, but any
 
-        players = std::move(newPlayers);
-        ranks = std::move(newRanks);
+        // currentGold.store(gold, std::memory_order_relaxed);
+        // gameTime.store(time, std::memory_order_relaxed);
+
+        // Item price polling
+        // if (!practicetool)
+        // {
+        //     auto now = std::chrono::steady_clock::now();
+
+        //     std::lock_guard<std::mutex> lock(dataMutex);
+
+        //     if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll)
+        //             .count() > 2)
+        //     {
+        //         for (size_t i = 0; i < players.size() / 2; i++)
+        //         {
+        //             PlayerInfo& currentPlayer = players[i];
+        //             PlayerInfo& laneOpponent = players[i + 5];
+
+        //             poller.getPlayerItems(currentPlayer);
+        //             poller.getPlayerItems(laneOpponent);
+
+        // poller.getPlayerItemSum(currentPlayer);
+        // poller.getPlayerItemSum(laneOpponent);
+
+        // itemGoldDiff[i] =
+        //     (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
+        //         }
+        //         lastPoll = now;
+        //     }
+        // }
     }
-
-    currentCS = poller.getcs(playerName);
-    float gold = poller.getGold();
-    float time = poller.getGameTime();
-
-    // Minons spawn after 30 seconds, no need to measure anything before that.
-    lcuPoller::getCSPM(csPerMin, currentCS, time, gold);
-    // The cs/min counter will always be an approximation because the API updates the number
-    // every 10 cs, this algorithm will somewhat smoothen that out, but any
-
-    // currentGold.store(gold, std::memory_order_relaxed);
-    // gameTime.store(time, std::memory_order_relaxed);
-
-    // Item price polling
-    // if (!practicetool)
-    // {
-    //     auto now = std::chrono::steady_clock::now();
-
-    //     std::lock_guard<std::mutex> lock(dataMutex);
-
-    //     if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll)
-    //             .count() > 2)
-    //     {
-    //         for (size_t i = 0; i < players.size() / 2; i++)
-    //         {
-    //             PlayerInfo& currentPlayer = players[i];
-    //             PlayerInfo& laneOpponent = players[i + 5];
-
-    //             poller.getPlayerItems(currentPlayer);
-    //             poller.getPlayerItems(laneOpponent);
-
-    // poller.getPlayerItemSum(currentPlayer);
-    // poller.getPlayerItemSum(laneOpponent);
-
-    // itemGoldDiff[i] =
-    //     (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
-    //         }
-    //         lastPoll = now;
-    //     }
-    // }
+    else
+    {
+        gameState.store(gameState::LOBBY);
+    }
 }
 
 void connectToLCU(LCUInfo& lcu)
