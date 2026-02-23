@@ -225,9 +225,7 @@ int main(int, char**)
     // Finish all DX11, SDL, and ImGui setup.
 
     // Friendly welcome message!
-    NEWLINE;
     QWACK_LOG("Thank you for choosing (or being forced to) try my program, Enjoy!");
-    NEWLINE;
 
     // CS/min screen. Static until I add dynamic placement.
     ImVec2 cspmSize = ImVec2(120, 30);
@@ -305,7 +303,6 @@ int main(int, char**)
                             // reset playerName & print message.
                             playerName = std::string();
 
-                            NEWLINE;
                             LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
                         }
                         printedWaitingForClient = false;
@@ -376,6 +373,7 @@ int main(int, char**)
 
         // Main game state logic.
         // Lobby state (Client open, not in game)
+        // TODO: throw all this into game poller!!!!!!!!!!!
         if (gameState.load() == gameState::LOBBY)
         {
             if (!inLobby)
@@ -389,7 +387,6 @@ int main(int, char**)
                 practicetool.store(false);
                 csPerMin.store(0.0f);
 
-                NEWLINE;
                 QWACK_LOG("In lobby. Waiting for game.");
             }
         }

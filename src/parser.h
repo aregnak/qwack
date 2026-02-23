@@ -44,7 +44,6 @@ inline LCUInfo parseLockfile()
         }
     }
 
-    NEWLINE;
     LCU_LOG("Parsed port: " << info.port);
     LCU_LOG("Parsed password: " << info.password);
 
