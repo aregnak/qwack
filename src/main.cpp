@@ -1,5 +1,3 @@
-#include <mutex>
-#include <thread>
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #define _WIN32_WINNT 0x0A00
@@ -14,6 +12,8 @@
 #include <future>
 #include <atomic>
 #include <filesystem>
+#include <mutex>
+#include <thread>
 // #include <dxgi1_2.h>
 
 #include <SDL.h>
@@ -303,17 +303,9 @@ int main(int, char**)
             {
                 while (running.load())
                 {
-                    if (!std::filesystem::exists("C:\\Riot Games\\League of Legends\\lockfile"))
+                    if (handleLauncherState(gameState))
                     {
-                        if (gameState.load() != gameState::CLOSED)
-                        {
-                            gameState.store(gameState::CLOSED);
-                            playerName = std::string();
-
-                            NEWLINE;
-                            LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
-                        }
-
+                        playerName = std::string();
                         printedWaitingForClient = false;
                     }
 
@@ -332,30 +324,14 @@ int main(int, char**)
                                 printedWaitingForClient = true;
                             }
 
-                            lcu = parseLockfile();
-
-                            if (lcu.port == 0)
-                            {
-                                std::this_thread::sleep_for(std::chrono::seconds(10));
-                            }
+                            connectToLCU(lcu);
                         }
 
                         lcuC.connect(lcu);
 
                         while (running.load() && playerName.empty())
                         {
-                            playerName = poller.getCurrentSummoner(lcuC);
-
-                            if (playerName.empty())
-                            {
-                                std::this_thread::sleep_for(std::chrono::seconds(5));
-                            }
-                            else
-                            {
-                                LCU_LOG("Summoner found: " << playerName);
-
-                                gameState.store(gameState::LOBBY);
-                            }
+                            getPlayerName(gameState, lcuC, poller, playerName);
                         }
                     }
 
