@@ -23,13 +23,12 @@
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_dx11.h"
 
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-
 #include "httplib.h"
 #include "json.hpp"
 
 #include "debugPrints.h"
 #include "game.h"
+#include "gamePoller.h"
 #include "poll.h"
 #include "parser.h"
 #include "lcuClient.h"
@@ -291,21 +290,39 @@ int main(int, char**)
             LCUClient lcuC;
             std::string playerName;
 
+            bool printedWaitingForClient = false;
+            bool minionsSpawned = false;
+
             int currentCS = 0;
             int lastCS = 0;
             int estimatedCS = 0;
             int totalCS = 0;
             float lastGold = 500.0f;
 
-            bool printedWaitingForClient = false;
-
             try
             {
                 while (running.load())
                 {
-                    if (handleLauncherState(gameState))
+                    // switch (gameState.load())
+                    // {
+                    //         case gameState::CLOSED;
+
+                    //         case gameState::LOBBY;
+
+                    //         case gameState::INGAME;
+                    //     }
+                    if (!std::filesystem::exists("C:\\Riot Games\\League of Legends\\lockfile"))
                     {
-                        playerName = std::string();
+                        if (gameState.load() != gameState::CLOSED)
+                        {
+                            gameState.store(gameState::CLOSED);
+
+                            // reset playerName & print message.
+                            playerName = std::string();
+
+                            NEWLINE;
+                            LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
+                        }
                         printedWaitingForClient = false;
                     }
 
@@ -324,14 +341,16 @@ int main(int, char**)
                                 printedWaitingForClient = true;
                             }
 
-                            connectToLCU(lcu);
+                            lcuPoller::connectToLCU(lcu);
                         }
 
                         lcuC.connect(lcu);
 
+                        // Get player name
                         while (running.load() && playerName.empty())
                         {
-                            getPlayerName(gameState, lcuC, poller, playerName);
+                            lcuPoller::getPlayerName(gameState, lcuC, poller, playerName);
+                            QWACK_LOG("Summoner found: " << playerName);
                         }
                     }
 
@@ -364,55 +383,7 @@ int main(int, char**)
 
                             if (!practicetool.load())
                             {
-                                // Unfortunately my understanding of the LCU API led me here,
-                                // to get players' ranks, we need the puuid, but to get their in game
-                                // stats, we need the live API (yes, different).
-                                // this code is very messy for now.
-
-                                for (auto& p : newPlayers)
-                                {
-                                    p.riotID = poller.getPlayerName(lcuC, p.puuid);
-                                    p.rank = poller.getPlayerRank(lcuC, p.puuid);
-
-                                    p.champ = poller.getChampionNameById(p.champID);
-                                    poller.getPlayerRoleAndTeam(p);
-                                    // std::cout << "puuid: " << p.puuid << " champId: " << p.champID
-                                    //           << " riotID: " << p.riotID << " rank: " << p.rank
-                                    //           << " role: " << p.role << " team: " << p.team
-                                    //           << std::endl;
-                                }
-
-                                sortPlayers(newPlayers);
-
-                                for (const auto& p : newPlayers)
-                                {
-                                    char rankLetter = p.rank[0];
-                                    int tierNumber =
-                                        romanToInt(p.rank.substr(p.rank.find(' ') + 1));
-
-                                    if (tierNumber != -1)
-                                    {
-                                        std::ostringstream oss;
-                                        oss << rankLetter;
-
-                                        // If rank doesn't contain tiers (Master+).
-                                        if (tierNumber != 0)
-                                        {
-                                            oss << tierNumber;
-                                        }
-                                        newRanks.push_back(oss.str());
-                                    }
-                                    else
-                                    {
-                                        newRanks.push_back("");
-                                    }
-
-                                    std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID
-                                              << " rank: " << p.rank << " role: " << p.role
-                                              << " team: " << p.team << std::endl;
-                                }
-                                QWACK_LOG("Successfully loaded players.");
-                                practicetool.store(false);
+                                lcuPoller::getSessionPlayers(newPlayers, newRanks, poller, lcuC);
                             }
                             playersLoaded.store(true);
 
