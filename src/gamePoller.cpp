@@ -91,14 +91,7 @@ void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
         float gold = poller.getGold();
         float time = poller.getGameTime();
 
-        LCU_LOG("Current cs: " << currentCS << " time: " << time << " Gold: " << gold);
-        // Minons spawn after 30 seconds, no need to measure anything before that.
         lcuPoller::getCSPM(csPerMin, currentCS, time, gold);
-        // The cs/min counter will always be an approximation because the API updates the number
-        // every 10 cs, this algorithm will somewhat smoothen that out, but any
-
-        // currentGold.store(gold, std::memory_order_relaxed);
-        // gameTime.store(time, std::memory_order_relaxed);
 
         // Item price polling
         // if (!practicetool)
