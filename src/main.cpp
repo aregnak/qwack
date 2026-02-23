@@ -554,9 +554,6 @@ int main(int, char**)
                 running.store(false);
             }
         }
-        float csDisplay = csPerMin.load();
-        float goldDisplay = currentGold.load();
-        float timeDisplay = gameTime.load();
 
         // CTRL+C doesn't really work, I think because the window is unfocusable.
         if (killSwitch())
@@ -565,39 +562,7 @@ int main(int, char**)
             running.store(false);
         }
 
-        // Focus checking and key checking.
-        if (gameState.load() == gameState::INGAME)
-        {
-            if (isLeagueFocused())
-            {
-                if (windowHidden)
-                {
-                    SDL_ShowWindow(window);
-                    windowHidden = false;
-                }
-            }
-            else
-            {
-                if (!windowHidden)
-                {
-                    SDL_HideWindow(window);
-                    windowHidden = true;
-                }
-            }
-
-            if (!practicetool.load())
-            {
-                if (!windowHidden && IsTabDown())
-                {
-                    tabDown = true;
-                }
-                else
-                {
-                    tabDown = false;
-                }
-            }
-        }
-
+        // Main game state logic.
         // Lobby state (Client open, not in game)
         if (gameState.load() == gameState::LOBBY)
         {
@@ -612,6 +577,7 @@ int main(int, char**)
                 practicetool.store(false);
                 csPerMin.store(0.0f);
 
+                NEWLINE;
                 QWACK_LOG("In lobby. Waiting for game.");
             }
         }
@@ -656,9 +622,40 @@ int main(int, char**)
             // ImGui::End();
         }
 
-        // In-game overlays.
+        // Focus checking and key checking.
         if (gameState.load() == gameState::INGAME)
         {
+            if (isLeagueFocused())
+            {
+                if (windowHidden)
+                {
+                    SDL_ShowWindow(window);
+                    windowHidden = false;
+                }
+            }
+            else
+            {
+                if (!windowHidden)
+                {
+                    SDL_HideWindow(window);
+                    windowHidden = true;
+                }
+            }
+
+            // Check if pressing tab (scoreboard).
+            if (!practicetool.load())
+            {
+                if (!windowHidden && IsTabDown())
+                {
+                    tabDown = true;
+                }
+                else
+                {
+                    tabDown = false;
+                }
+            }
+
+            // Overlays are down here.
             // CS/Min overlay
             if (!windowHidden)
             {
@@ -677,7 +674,7 @@ int main(int, char**)
                 }
                 else
                 {
-                    ImGui::Text("CS/min: %.2f", csDisplay);
+                    ImGui::Text("CS/min: %.2f", csPerMin.load());
                 }
                 ImGui::End();
             }
