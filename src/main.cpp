@@ -269,12 +269,13 @@ int main(int, char**)
     std::vector<int> itemGoldDiff(5);
     std::mutex dataMutex;
 
-    std::atomic<float> csPerMin = -1.0f;
-    std::atomic<float> currentGold = 500.0f;
-    std::atomic<float> gameTime = 0.0f;
     std::atomic<bool> running = true;
     std::atomic<bool> practicetool = false;
     std::atomic<bool> playersLoaded = false;
+
+    std::atomic<float> csPerMin = -1.0f;
+    std::atomic<float> currentGold = 500.0f;
+    std::atomic<float> gameTime = 0.0f;
 
     // Initial game state of closed (league not open).
     std::atomic<gameState> gameState = gameState::CLOSED;
@@ -361,7 +362,15 @@ int main(int, char**)
                     // State is in game (INGAME).
                     if (poller.update())
                     {
-                        gameState.store(gameState::INGAME);
+                        // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
+                        if (gameState.load() != gameState::INGAME)
+                        {
+                            // This makes the INGAME state really mean loaded into the game, not just loading screen.
+                            if (poller.getGameTime() > 0.5f)
+                            {
+                                gameState.store(gameState::INGAME);
+                            }
+                        }
 
                         if (!playersLoaded.load())
                         {
@@ -477,29 +486,32 @@ int main(int, char**)
                         gameTime.store(time, std::memory_order_relaxed);
 
                         // Item price polling
-                        if (!practicetool)
-                        {
-                            auto now = std::chrono::steady_clock::now();
+                        // if (!practicetool)
+                        // {
+                        //     auto now = std::chrono::steady_clock::now();
 
-                            std::lock_guard<std::mutex> lock(dataMutex);
+                        //     std::lock_guard<std::mutex> lock(dataMutex);
 
-                            if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll)
-                                    .count() > 2)
-                            {
-                                for (size_t i = 0; i < players.size() / 2; i++)
-                                {
-                                    PlayerInfo& currentPlayer = players[i];
-                                    PlayerInfo& laneOpponent = players[i + 5];
+                        //     if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll)
+                        //             .count() > 2)
+                        //     {
+                        //         for (size_t i = 0; i < players.size() / 2; i++)
+                        //         {
+                        //             PlayerInfo& currentPlayer = players[i];
+                        //             PlayerInfo& laneOpponent = players[i + 5];
 
-                                    poller.getPlayerItemSum(currentPlayer);
-                                    poller.getPlayerItemSum(laneOpponent);
+                        //             poller.getPlayerItems(currentPlayer);
+                        //             poller.getPlayerItems(laneOpponent);
 
-                                    itemGoldDiff[i] =
-                                        (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
-                                }
-                                lastPoll = now;
-                            }
-                        }
+                        // poller.getPlayerItemSum(currentPlayer);
+                        // poller.getPlayerItemSum(laneOpponent);
+
+                        // itemGoldDiff[i] =
+                        //     (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
+                        //         }
+                        //         lastPoll = now;
+                        //     }
+                        // }
                     }
                     else
                     {
@@ -553,32 +565,36 @@ int main(int, char**)
             running.store(false);
         }
 
-        if (isLeagueFocused())
+        // Focus checking and key checking.
+        if (gameState.load() == gameState::INGAME)
         {
-            if (windowHidden)
+            if (isLeagueFocused())
             {
-                SDL_ShowWindow(window);
-                windowHidden = false;
-            }
-        }
-        else
-        {
-            if (!windowHidden)
-            {
-                SDL_HideWindow(window);
-                windowHidden = true;
-            }
-        }
-
-        if (!practicetool.load())
-        {
-            if (!windowHidden && IsTabDown())
-            {
-                tabDown = true;
+                if (windowHidden)
+                {
+                    SDL_ShowWindow(window);
+                    windowHidden = false;
+                }
             }
             else
             {
-                tabDown = false;
+                if (!windowHidden)
+                {
+                    SDL_HideWindow(window);
+                    windowHidden = true;
+                }
+            }
+
+            if (!practicetool.load())
+            {
+                if (!windowHidden && IsTabDown())
+                {
+                    tabDown = true;
+                }
+                else
+                {
+                    tabDown = false;
+                }
             }
         }
 
@@ -640,62 +656,66 @@ int main(int, char**)
             // ImGui::End();
         }
 
-        // CS/Min overlay
-        if (!windowHidden)
+        // In-game overlays.
+        if (gameState.load() == gameState::INGAME)
         {
-            ImGui::SetNextWindowBgAlpha(0.4f);
-            ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
-            ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
-
-            ImGui::Begin("cspm", nullptr,
-                         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                             ImGuiWindowFlags_NoFocusOnAppearing);
-
-            if (csPerMin.load() < 0.0f)
-            {
-                ImGui::Text("Waiting for game.");
-            }
-            else
-            {
-                ImGui::Text("CS/min: %.2f", csDisplay);
-            }
-            ImGui::End();
-        }
-
-        // Ranks & item gold diff overlay
-        if (tabDown)
-        {
-            int num = 0;
-            for (const auto& pos : rankPoss)
+            // CS/Min overlay
+            if (!windowHidden)
             {
                 ImGui::SetNextWindowBgAlpha(0.4f);
-                ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-                ImGui::SetNextWindowSize(rankSize, ImGuiCond_Always);
-                ImGui::Begin(("RankedWindow##" + std::to_string(num)).c_str(), nullptr,
+                ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
+                ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
+
+                ImGui::Begin("cspm", nullptr,
                              ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                                  ImGuiWindowFlags_NoFocusOnAppearing);
 
-                ImGui::Text(ranks[num].c_str());
+                if (csPerMin.load() < 0.0f)
+                {
+                    ImGui::Text("Waiting for game.");
+                }
+                else
+                {
+                    ImGui::Text("CS/min: %.2f", csDisplay);
+                }
                 ImGui::End();
-                num++;
             }
 
-            num = 0;
-            for (const auto& pos : itemPoss)
+            // Ranks & item gold diff overlay
+            if (tabDown)
             {
-                ImGui::SetNextWindowBgAlpha(0.4f);
-                ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-                ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
-                ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
-                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                                 ImGuiWindowFlags_NoFocusOnAppearing);
+                int num = 0;
+                for (const auto& pos : rankPoss)
+                {
+                    ImGui::SetNextWindowBgAlpha(0.4f);
+                    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+                    ImGui::SetNextWindowSize(rankSize, ImGuiCond_Always);
+                    ImGui::Begin(("RankedWindow##" + std::to_string(num)).c_str(), nullptr,
+                                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                     ImGuiWindowFlags_NoFocusOnAppearing);
 
-                ImGui::Text("%d", itemGoldDiff[num]);
-                ImGui::End();
-                num++;
+                    ImGui::Text(ranks[num].c_str());
+                    ImGui::End();
+                    num++;
+                }
+
+                num = 0;
+                for (const auto& pos : itemPoss)
+                {
+                    ImGui::SetNextWindowBgAlpha(0.4f);
+                    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+                    ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
+                    ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
+                                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                     ImGuiWindowFlags_NoFocusOnAppearing);
+
+                    ImGui::Text("%d", itemGoldDiff[num]);
+                    ImGui::End();
+                    num++;
+                }
             }
         }
 
