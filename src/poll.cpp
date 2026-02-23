@@ -182,24 +182,22 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
     }
 }
 
-void poll::getPlayerItemSum(PlayerInfo& player)
+void poll::getPlayerItems(PlayerInfo& player)
 {
     // auto body = loadJsonFile("./allgamedata2.json");
 
     // auto gameData = json::parse(body, nullptr, false);
 
-    int itemsPrice = 0;
     for (const auto& j : gameDataCache["allPlayers"])
     {
         if (j["championName"] == player.champ)
         {
+            player.itemIDs.clear();
             for (const auto& i : j["items"])
             {
-                int price = i["price"].get<int>();
-                itemsPrice += price;
+                player.itemIDs.push_back(std::to_string(j["itemID"].get<int>()));
             }
-            LCU_LOG("Player: " << j["championName"] << " Item Total: " << itemsPrice);
-            player.itemsPrice = itemsPrice;
+
             break;
         }
     }
@@ -232,6 +230,16 @@ float poll::getGold()
 }
 
 // Helper functions
+int poll::getItemPrice(std::string itemID)
+{
+    if (itemDataCache["data"].contains(itemID))
+    {
+        return itemDataCache["data"][itemID]["gold"]["total"];
+    }
+
+    return 0;
+}
+
 std::string poll::getChampionNameById(int id)
 {
     std::string idstr = std::to_string(id);

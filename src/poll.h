@@ -27,12 +27,13 @@ public:
 
     // Using Live Client API (in game).
     void getPlayerRoleAndTeam(PlayerInfo&);
-    void getPlayerItemSum(PlayerInfo&);
+    void getPlayerItems(PlayerInfo&);
     int getcs(const std::string&);
     float getGameTime();
     float getGold();
 
     // Helper functions
+    int getItemPrice(std::string);
     std::string getChampionNameById(int);
     std::string loadJsonFile(const std::string&);
 
