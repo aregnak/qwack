@@ -2,7 +2,7 @@
 #include "game.h"
 #include "lcuClient.h"
 #include "playerInfo.h"
-#include "debugPrints.h"
+#include "log.h"
 
 namespace lcuPoller
 {

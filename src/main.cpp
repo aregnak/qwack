@@ -26,7 +26,7 @@
 #include "httplib.h"
 #include "json.hpp"
 
-#include "debugPrints.h"
+#include "log.h"
 #include "game.h"
 #include "gamePoller.h"
 #include "poll.h"

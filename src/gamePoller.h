@@ -11,7 +11,7 @@
 #include "lcuClient.h"
 #include "parser.h"
 #include "poll.h"
-#include "debugPrints.h"
+#include "log.h"
 
 namespace lcuPoller
 {

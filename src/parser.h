@@ -8,7 +8,7 @@
 #include <vector>
 #include <sstream>
 
-#include "debugPrints.h"
+#include "log.h"
 
 struct LCUInfo
 {
