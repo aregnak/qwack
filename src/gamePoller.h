@@ -33,4 +33,8 @@ void getSessionPlayers(std::vector<PlayerInfo>&, std::vector<std::string>&, poll
 
 void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold);
 
+void resetInGameCache(std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
+                      std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
+                      std::atomic<float>& csPerMin);
+
 } // namespace lcuPoller

@@ -34,6 +34,8 @@ void handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& ga
             lcuPoller::getPlayerName(gameState, lcuC, poller, playerName);
         }
 
+        // Maybe this is poor design, but the while loops will be exitted
+        // only when you actually launch the client, so state becomes lobby at this point.
         gameState.store(gameState::LOBBY);
     }
 }
@@ -123,6 +125,7 @@ void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
     }
     else
     {
+        // If live client update doesn't update anymore.
         gameState.store(gameState::LOBBY);
     }
 }
@@ -234,6 +237,20 @@ void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold
         }
         csPerMin.store(totalCS / (time / 60.0f), std::memory_order_relaxed);
     }
+}
+
+void resetInGameCache(std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
+                      std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
+                      std::atomic<float>& csPerMin)
+{
+    ranks.clear();
+    players = std::vector<PlayerInfo>(10);
+
+    playersLoaded.store(false);
+    practicetool.store(false);
+    csPerMin.store(0.0f);
+
+    QWACK_LOG("In lobby. Waiting for game.");
 }
 
 } // namespace lcuPoller
