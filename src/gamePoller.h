@@ -16,32 +16,37 @@
 class GamePoller
 {
 public:
-    GamePoller() = default;
+    GamePoller();
 
-    void handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& gameState,
-                           std::atomic<bool>& running, std::string&, bool& printedWaitingForClient);
+    void handleClosedState(LCUClient& lcuC, std::atomic<gameState>& gameState,
+                           std::atomic<bool>& running);
 
-    void handleLobbyState(std::atomic<gameState>& gameState, poll& poller,
-                          std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
-                          std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
-                          std::atomic<float>& csPerMin);
+    void handleLobbyState(std::atomic<gameState>& gameState, std::vector<std::string>& ranks,
+                          std::atomic<bool>& practicetool, std::atomic<float>& csPerMin);
 
-    void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
-                           std::vector<std::string>& ranks, poll& poller,
+    void handleInGameState(LCUClient& lcuC, std::vector<std::string>& ranks,
                            std::atomic<float>& csPerMin, std::atomic<gameState>& gameState,
-                           std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
-                           std::string& playerName, std::mutex& dataMutex);
+                           std::atomic<bool>& practicetool, std::mutex& dataMutex);
 
     void connectToLCU(LCUInfo&);
-    void getPlayerName(std::atomic<gameState>&, LCUClient&, poll&, std::string&);
-    void getSessionPlayers(std::vector<PlayerInfo>&, std::vector<std::string>&, poll&, LCUClient&);
+    void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC);
+    void getSessionPlayers(std::vector<std::string>& newRanks, LCUClient& lcuC);
 
     void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold);
 
-    void resetInGameCache(std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
-                          std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
+    void resetInGameCache(std::vector<std::string>& ranks, std::atomic<bool>& practicetool,
                           std::atomic<float>& csPerMin);
 
+    void resetPlayerName();
+    void setPrintedWaitingForClient(bool state);
+
 private:
+    bool _playersLoaded = false;
     bool _inLobby = false;
+    bool _printedWaitingForClient = false;
+
+    std::string _playerName;
+
+    poll _poller;
+    std::vector<PlayerInfo> _players;
 };

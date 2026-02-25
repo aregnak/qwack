@@ -19,6 +19,8 @@ struct PlayerInfo
     std::string role;
     std::string team;
     std::vector<std::string> itemIDs;
+
+    PlayerInfo() = default;
 };
 
 // Sort players based on the role order right below.

@@ -4,14 +4,14 @@
 #include "playerInfo.h"
 #include "log.h"
 
-// GamePoller::GamePoller()
-// {
-//     // ! complete this.
-// }
+GamePoller::GamePoller()
+    : _players(10)
+{
+    //
+}
 
-void GamePoller::handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& gameState,
-                                   std::atomic<bool>& running, std::string& playerName,
-                                   bool& printedWaitingForClient)
+void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& gameState,
+                                   std::atomic<bool>& running)
 {
     _inLobby = false;
 
@@ -21,10 +21,10 @@ void GamePoller::handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<ga
 
         while (running.load() && lcu.port == 0)
         {
-            if (!printedWaitingForClient)
+            if (!_printedWaitingForClient)
             {
                 LCU_LOG("Waiting for League client (open it...)");
-                printedWaitingForClient = true;
+                _printedWaitingForClient = true;
             }
 
             connectToLCU(lcu);
@@ -33,9 +33,9 @@ void GamePoller::handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<ga
         lcuC.connect(lcu);
 
         // Get player name
-        while (running.load() && playerName.empty())
+        while (running.load() && _playerName.empty())
         {
-            getPlayerName(gameState, lcuC, poller, playerName);
+            getPlayerName(gameState, lcuC);
         }
 
         // Maybe this is poor design, but the while loops will be exitted
@@ -44,34 +44,30 @@ void GamePoller::handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<ga
     }
 }
 
-void GamePoller::handleLobbyState(std::atomic<gameState>& gameState, poll& poller,
-                                  std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
-                                  std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
+void GamePoller::handleLobbyState(std::atomic<gameState>& gameState,
+                                  std::vector<std::string>& ranks, std::atomic<bool>& practicetool,
                                   std::atomic<float>& csPerMin)
 {
     if (!_inLobby)
     {
-        resetInGameCache(ranks, players, playersLoaded, practicetool, csPerMin);
+        resetInGameCache(ranks, practicetool, csPerMin);
         _inLobby = true;
     }
 
-    if (poller.update())
+    if (_poller.update())
     {
         // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
         // This makes the INGAME state really mean loaded into the game, not just loading screen.
-        if (poller.getGameTime() > 0.5f)
+        if (_poller.getGameTime() > 0.5f)
         {
             gameState.store(gameState::INGAME);
         }
     }
 }
 
-void GamePoller::handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
-                                   std::vector<std::string>& ranks, poll& poller,
+void GamePoller::handleInGameState(LCUClient& lcuC, std::vector<std::string>& ranks,
                                    std::atomic<float>& csPerMin, std::atomic<gameState>& gameState,
-                                   std::atomic<bool>& playersLoaded,
-                                   std::atomic<bool>& practicetool, std::string& playerName,
-                                   std::mutex& dataMutex)
+                                   std::atomic<bool>& practicetool, std::mutex& dataMutex)
 {
     static int currentCS = 0;
 
@@ -81,15 +77,15 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& pla
         QWACK_LOG("GLHF.");
     }
 
-    if (poller.update())
+    if (_poller.update())
     {
-        if (!playersLoaded.load())
+        if (!_playersLoaded)
         {
             std::vector<PlayerInfo> newPlayers(10);
             std::vector<std::string> newRanks;
             LCU_LOG("Polling Player Info...");
 
-            poller.getSessionInfo(lcuC, newPlayers);
+            _poller.getSessionInfo(lcuC, newPlayers);
 
             if (newPlayers.empty())
             {
@@ -99,19 +95,18 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& pla
 
             if (!practicetool.load())
             {
-                getSessionPlayers(newPlayers, newRanks, poller, lcuC);
+                getSessionPlayers(newRanks, lcuC);
             }
-            playersLoaded.store(true);
+            _playersLoaded = true;
 
             std::lock_guard<std::mutex> lock(dataMutex);
-
-            players = std::move(newPlayers);
+            _players = std::move(newPlayers);
             ranks = std::move(newRanks);
         }
 
-        currentCS = poller.getcs(playerName);
-        float gold = poller.getGold();
-        float time = poller.getGameTime();
+        currentCS = _poller.getcs(_playerName);
+        float gold = _poller.getGold();
+        float time = _poller.getGameTime();
 
         getCSPM(csPerMin, currentCS, time, gold);
 
@@ -160,42 +155,39 @@ void GamePoller::connectToLCU(LCUInfo& lcu)
     }
 }
 
-void GamePoller::getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC, poll& poller,
-                               std::string& playerName)
+void GamePoller::getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC)
 {
-    playerName = poller.getCurrentSummoner(lcuC);
+    _playerName = _poller.getCurrentSummoner(lcuC);
 
-    if (playerName.empty())
+    if (_playerName.empty())
     {
         std::this_thread::sleep_for(std::chrono::seconds(5));
     }
     else
     {
         gameState.store(gameState::LOBBY);
-        QWACK_LOG("Summoner found: " << playerName);
+        QWACK_LOG("Summoner found: " << _playerName);
     }
 }
 
-void GamePoller::getSessionPlayers(std::vector<PlayerInfo>& newPlayers,
-                                   std::vector<std::string>& newRanks, poll& poller,
-                                   LCUClient& lcuC)
+void GamePoller::getSessionPlayers(std::vector<std::string>& newRanks, LCUClient& lcuC)
 {
     // Unfortunately my understanding of the LCU API led me here,
     // to get players' ranks, we need the puuid, but to get their in game
     // stats, we need the live API (yes, different).
     // this code is very messy for now.
-    for (auto& p : newPlayers)
+    for (auto& p : _players)
     {
-        p.riotID = poller.getPlayerName(lcuC, p.puuid);
-        p.rank = poller.getPlayerRank(lcuC, p.puuid);
+        p.riotID = _poller.getPlayerName(lcuC, p.puuid);
+        p.rank = _poller.getPlayerRank(lcuC, p.puuid);
 
-        p.champ = poller.getChampionNameById(p.champID);
-        poller.getPlayerRoleAndTeam(p);
+        p.champ = _poller.getChampionNameById(p.champID);
+        _poller.getPlayerRoleAndTeam(p);
     }
 
-    sortPlayers(newPlayers);
+    sortPlayers(_players);
 
-    for (const auto& p : newPlayers)
+    for (const auto& p : _players)
     {
         char rankLetter = p.rank[0];
         int tierNumber = romanToInt(p.rank.substr(p.rank.find(' ') + 1));
@@ -260,16 +252,27 @@ void GamePoller::getCSPM(std::atomic<float>& csPerMin, int currentCS, float time
     }
 }
 
-void GamePoller::resetInGameCache(std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
-                                  std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
+void GamePoller::resetInGameCache(std::vector<std::string>& ranks, std::atomic<bool>& practicetool,
                                   std::atomic<float>& csPerMin)
 {
     ranks.clear();
-    players = std::vector<PlayerInfo>(10);
+    _players = std::vector<PlayerInfo>(10);
 
-    playersLoaded.store(false);
+    _playersLoaded = false;
     practicetool.store(false);
     csPerMin.store(0.0f);
 
     QWACK_LOG("In lobby. Waiting for game.");
+}
+
+void GamePoller::resetPlayerName()
+{
+    _playerName = std::string();
+    //
+}
+
+void GamePoller::setPrintedWaitingForClient(bool state)
+{
+    _printedWaitingForClient = state;
+    //
 }

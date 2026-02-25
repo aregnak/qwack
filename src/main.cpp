@@ -262,13 +262,11 @@ int main(int, char**)
     }
 
     std::vector<std::string> ranks;
-    std::vector<PlayerInfo> players(10);
     std::vector<int> itemGoldDiff(5);
     std::mutex dataMutex;
 
     std::atomic<bool> running = true;
     std::atomic<bool> practicetool = false;
-    std::atomic<bool> playersLoaded = false;
 
     std::atomic<float> csPerMin = -1.0f;
     // std::atomic<float> currentGold = 500.0f;
@@ -283,13 +281,9 @@ int main(int, char**)
         {
             auto lastPoll = std::chrono::steady_clock::now();
 
-            poll poller;
             GamePoller gp;
 
             LCUClient lcuC;
-            std::string playerName;
-
-            bool printedWaitingForClient = false;
 
             try
             {
@@ -302,29 +296,29 @@ int main(int, char**)
                             gameState.store(gameState::CLOSED);
 
                             // reset playerName & print message.
-                            playerName = std::string();
+                            gp.resetPlayerName();
 
                             LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
                         }
-                        printedWaitingForClient = false;
+
+                        // ! Change this stupidass name.
+                        // * when i wrote "stupidass" my tired mind autocorrected ass to assh (ssh), laugh now.
+                        gp.setPrintedWaitingForClient(false);
                     }
 
                     // Game state management.
                     switch (gameState.load())
                     {
                         case gameState::CLOSED:
-                            gp.handleClosedState(lcuC, poller, gameState, running, playerName,
-                                                 printedWaitingForClient);
+                            gp.handleClosedState(lcuC, gameState, running);
                             break;
 
                         case gameState::LOBBY:
-                            gp.handleLobbyState(gameState, poller, ranks, players, playersLoaded,
-                                                practicetool, csPerMin);
+                            gp.handleLobbyState(gameState, ranks, practicetool, csPerMin);
                             break;
 
                         case gameState::INGAME:
-                            gp.handleInGameState(lcuC, players, ranks, poller, csPerMin, gameState,
-                                                 playersLoaded, practicetool, playerName,
+                            gp.handleInGameState(lcuC, ranks, csPerMin, gameState, practicetool,
                                                  dataMutex);
                             break;
                     }
@@ -372,30 +366,6 @@ int main(int, char**)
             QWACK_LOG("Killswitch activated. Exiting.");
             running.store(false);
         }
-
-        // Main game state logic.
-        // Lobby state (Client open, not in game)
-        // TODO: throw all this into game poller!!!!!!!!!!!
-        // if (gameState.load() == gameState::LOBBY)
-        // {
-        //     if (!inLobby)
-        //     {
-        //         inLobby = true;
-        //     }
-        // }
-        // else if (gameState.load() == gameState::INGAME)
-        // {
-        //     if (inLobby)
-        //     {
-        //         inLobby = false;
-
-        //         QWACK_LOG("GLHF.");
-        //     }
-        // }
-        // else if (gameState.load() == gameState::CLOSED)
-        // {
-        //     inLobby = false;
-        // }
 
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();
