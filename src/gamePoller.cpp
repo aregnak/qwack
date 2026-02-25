@@ -13,6 +13,8 @@ void GamePoller::handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<ga
                                    std::atomic<bool>& running, std::string& playerName,
                                    bool& printedWaitingForClient)
 {
+    _inLobby = false;
+
     if (gameState.load() == gameState::CLOSED)
     {
         LCUInfo lcu;
@@ -42,8 +44,17 @@ void GamePoller::handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<ga
     }
 }
 
-void GamePoller::handleLobbyState(std::atomic<gameState>& gameState, poll& poller)
+void GamePoller::handleLobbyState(std::atomic<gameState>& gameState, poll& poller,
+                                  std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
+                                  std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
+                                  std::atomic<float>& csPerMin)
 {
+    if (!_inLobby)
+    {
+        resetInGameCache(ranks, players, playersLoaded, practicetool, csPerMin);
+        _inLobby = true;
+    }
+
     if (poller.update())
     {
         // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
@@ -63,6 +74,12 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& pla
                                    std::mutex& dataMutex)
 {
     static int currentCS = 0;
+
+    if (_inLobby)
+    {
+        _inLobby = false;
+        QWACK_LOG("GLHF.");
+    }
 
     if (poller.update())
     {

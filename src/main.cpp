@@ -318,7 +318,8 @@ int main(int, char**)
                             break;
 
                         case gameState::LOBBY:
-                            gp.handleLobbyState(gameState, poller);
+                            gp.handleLobbyState(gameState, poller, ranks, players, playersLoaded,
+                                                practicetool, csPerMin);
                             break;
 
                         case gameState::INGAME:
@@ -375,26 +376,26 @@ int main(int, char**)
         // Main game state logic.
         // Lobby state (Client open, not in game)
         // TODO: throw all this into game poller!!!!!!!!!!!
-        if (gameState.load() == gameState::LOBBY)
-        {
-            if (!inLobby)
-            {
-                inLobby = true;
-            }
-        }
-        else if (gameState.load() == gameState::INGAME)
-        {
-            if (inLobby)
-            {
-                inLobby = false;
+        // if (gameState.load() == gameState::LOBBY)
+        // {
+        //     if (!inLobby)
+        //     {
+        //         inLobby = true;
+        //     }
+        // }
+        // else if (gameState.load() == gameState::INGAME)
+        // {
+        //     if (inLobby)
+        //     {
+        //         inLobby = false;
 
-                QWACK_LOG("GLHF.");
-            }
-        }
-        else if (gameState.load() == gameState::CLOSED)
-        {
-            inLobby = false;
-        }
+        //         QWACK_LOG("GLHF.");
+        //     }
+        // }
+        // else if (gameState.load() == gameState::CLOSED)
+        // {
+        //     inLobby = false;
+        // }
 
         // Start ImGui frame
         ImGui_ImplDX11_NewFrame();

@@ -21,7 +21,10 @@ public:
     void handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& gameState,
                            std::atomic<bool>& running, std::string&, bool& printedWaitingForClient);
 
-    void handleLobbyState(std::atomic<gameState>& gameState, poll& poller);
+    void handleLobbyState(std::atomic<gameState>& gameState, poll& poller,
+                          std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
+                          std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
+                          std::atomic<float>& csPerMin);
 
     void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
                            std::vector<std::string>& ranks, poll& poller,
@@ -40,4 +43,5 @@ public:
                           std::atomic<float>& csPerMin);
 
 private:
+    bool _inLobby = false;
 };
