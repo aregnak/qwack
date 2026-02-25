@@ -4,12 +4,14 @@
 #include "playerInfo.h"
 #include "log.h"
 
-namespace lcuPoller
-{
+// GamePoller::GamePoller()
+// {
+//     // ! complete this.
+// }
 
-void handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& gameState,
-                       std::atomic<bool>& running, std::string& playerName,
-                       bool& printedWaitingForClient)
+void GamePoller::handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& gameState,
+                                   std::atomic<bool>& running, std::string& playerName,
+                                   bool& printedWaitingForClient)
 {
     if (gameState.load() == gameState::CLOSED)
     {
@@ -23,7 +25,7 @@ void handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& ga
                 printedWaitingForClient = true;
             }
 
-            lcuPoller::connectToLCU(lcu);
+            connectToLCU(lcu);
         }
 
         lcuC.connect(lcu);
@@ -31,7 +33,7 @@ void handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& ga
         // Get player name
         while (running.load() && playerName.empty())
         {
-            lcuPoller::getPlayerName(gameState, lcuC, poller, playerName);
+            getPlayerName(gameState, lcuC, poller, playerName);
         }
 
         // Maybe this is poor design, but the while loops will be exitted
@@ -40,7 +42,7 @@ void handleClosedState(LCUClient& lcuC, poll& poller, std::atomic<gameState>& ga
     }
 }
 
-void handleLobbyState(std::atomic<gameState>& gameState, poll& poller)
+void GamePoller::handleLobbyState(std::atomic<gameState>& gameState, poll& poller)
 {
     if (poller.update())
     {
@@ -53,11 +55,12 @@ void handleLobbyState(std::atomic<gameState>& gameState, poll& poller)
     }
 }
 
-void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
-                       std::vector<std::string>& ranks, poll& poller, std::atomic<float>& csPerMin,
-                       std::atomic<gameState>& gameState, std::atomic<bool>& playersLoaded,
-                       std::atomic<bool>& practicetool, std::string& playerName,
-                       std::mutex& dataMutex)
+void GamePoller::handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
+                                   std::vector<std::string>& ranks, poll& poller,
+                                   std::atomic<float>& csPerMin, std::atomic<gameState>& gameState,
+                                   std::atomic<bool>& playersLoaded,
+                                   std::atomic<bool>& practicetool, std::string& playerName,
+                                   std::mutex& dataMutex)
 {
     static int currentCS = 0;
 
@@ -79,7 +82,7 @@ void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
 
             if (!practicetool.load())
             {
-                lcuPoller::getSessionPlayers(newPlayers, newRanks, poller, lcuC);
+                getSessionPlayers(newPlayers, newRanks, poller, lcuC);
             }
             playersLoaded.store(true);
 
@@ -93,7 +96,7 @@ void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
         float gold = poller.getGold();
         float time = poller.getGameTime();
 
-        lcuPoller::getCSPM(csPerMin, currentCS, time, gold);
+        getCSPM(csPerMin, currentCS, time, gold);
 
         // Item price polling
         // if (!practicetool)
@@ -130,7 +133,7 @@ void handleInGameState(LCUClient& lcuC, std::vector<PlayerInfo>& players,
     }
 }
 
-void connectToLCU(LCUInfo& lcu)
+void GamePoller::connectToLCU(LCUInfo& lcu)
 {
     lcu = parseLockfile();
 
@@ -140,8 +143,8 @@ void connectToLCU(LCUInfo& lcu)
     }
 }
 
-void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC, poll& poller,
-                   std::string& playerName)
+void GamePoller::getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC, poll& poller,
+                               std::string& playerName)
 {
     playerName = poller.getCurrentSummoner(lcuC);
 
@@ -156,8 +159,9 @@ void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC, poll& pol
     }
 }
 
-void getSessionPlayers(std::vector<PlayerInfo>& newPlayers, std::vector<std::string>& newRanks,
-                       poll& poller, LCUClient& lcuC)
+void GamePoller::getSessionPlayers(std::vector<PlayerInfo>& newPlayers,
+                                   std::vector<std::string>& newRanks, poll& poller,
+                                   LCUClient& lcuC)
 {
     // Unfortunately my understanding of the LCU API led me here,
     // to get players' ranks, we need the puuid, but to get their in game
@@ -202,7 +206,7 @@ void getSessionPlayers(std::vector<PlayerInfo>& newPlayers, std::vector<std::str
     QWACK_LOG("Successfully loaded players.");
 }
 
-void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold)
+void GamePoller::getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold)
 {
     static int lastCS = 0;
     static int estimatedCS = 0;
@@ -239,9 +243,9 @@ void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold
     }
 }
 
-void resetInGameCache(std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
-                      std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
-                      std::atomic<float>& csPerMin)
+void GamePoller::resetInGameCache(std::vector<std::string>& ranks, std::vector<PlayerInfo>& players,
+                                  std::atomic<bool>& playersLoaded, std::atomic<bool>& practicetool,
+                                  std::atomic<float>& csPerMin)
 {
     ranks.clear();
     players = std::vector<PlayerInfo>(10);
@@ -252,5 +256,3 @@ void resetInGameCache(std::vector<std::string>& ranks, std::vector<PlayerInfo>& 
 
     QWACK_LOG("In lobby. Waiting for game.");
 }
-
-} // namespace lcuPoller

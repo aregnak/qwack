@@ -284,6 +284,7 @@ int main(int, char**)
             auto lastPoll = std::chrono::steady_clock::now();
 
             poll poller;
+            GamePoller gp;
 
             LCUClient lcuC;
             std::string playerName;
@@ -312,18 +313,18 @@ int main(int, char**)
                     switch (gameState.load())
                     {
                         case gameState::CLOSED:
-                            lcuPoller::handleClosedState(lcuC, poller, gameState, running,
-                                                         playerName, printedWaitingForClient);
+                            gp.handleClosedState(lcuC, poller, gameState, running, playerName,
+                                                 printedWaitingForClient);
                             break;
 
                         case gameState::LOBBY:
-                            lcuPoller::handleLobbyState(gameState, poller);
+                            gp.handleLobbyState(gameState, poller);
                             break;
 
                         case gameState::INGAME:
-                            lcuPoller::handleInGameState(lcuC, players, ranks, poller, csPerMin,
-                                                         gameState, playersLoaded, practicetool,
-                                                         playerName, dataMutex);
+                            gp.handleInGameState(lcuC, players, ranks, poller, csPerMin, gameState,
+                                                 playersLoaded, practicetool, playerName,
+                                                 dataMutex);
                             break;
                     }
 
@@ -379,15 +380,6 @@ int main(int, char**)
             if (!inLobby)
             {
                 inLobby = true;
-
-                ranks.clear();
-                players = std::vector<PlayerInfo>(10);
-
-                playersLoaded.store(false);
-                practicetool.store(false);
-                csPerMin.store(0.0f);
-
-                QWACK_LOG("In lobby. Waiting for game.");
             }
         }
         else if (gameState.load() == gameState::INGAME)
