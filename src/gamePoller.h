@@ -27,6 +27,13 @@ public:
     void handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin,
                            std::atomic<gameState>& gameState, std::atomic<bool>& practicetool);
 
+    void resetPlayerName();
+    void setPrintedWaitingForClient(bool state);
+
+    const bool isRanksReady();
+    std::vector<std::string> getRanks();
+
+private:
     void connectToLCU(LCUInfo&);
     void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC);
     void getSessionPlayers(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);
@@ -35,13 +42,6 @@ public:
 
     void resetInGameCache(std::atomic<bool>& practicetool, std::atomic<float>& csPerMin);
 
-    void resetPlayerName();
-    void setPrintedWaitingForClient(bool state);
-
-    const bool isRanksReady();
-    std::vector<std::string> getRanks();
-
-private:
     bool _playersLoaded = false;
     bool _inLobby = false;
     bool _printedWaitingForClient = false;
