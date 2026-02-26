@@ -21,15 +21,15 @@ public:
     void handleClosedState(LCUClient& lcuC, std::atomic<gameState>& gameState,
                            std::atomic<bool>& running);
 
-    void handleLobbyState(std::atomic<gameState>& gameState, std::atomic<bool>& practicetool,
-                          std::atomic<float>& csPerMin);
+    void handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameState,
+                          std::atomic<bool>& practicetool, std::atomic<float>& csPerMin);
 
     void handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin,
                            std::atomic<gameState>& gameState, std::atomic<bool>& practicetool);
 
     void connectToLCU(LCUInfo&);
     void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC);
-    void getSessionPlayers(LCUClient& lcuC);
+    void getSessionPlayers(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);
 
     void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold);
 

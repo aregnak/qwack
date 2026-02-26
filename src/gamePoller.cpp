@@ -3,10 +3,11 @@
 #include "lcuClient.h"
 #include "playerInfo.h"
 #include "log.h"
+#include <wingdi.h>
 
 GamePoller::GamePoller()
     : _players(10)
-    , _ranksReady(false) // Not sure about this
+    , _ranksReady(false)
 {
     //
 }
@@ -45,7 +46,7 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
     }
 }
 
-void GamePoller::handleLobbyState(std::atomic<gameState>& gameState,
+void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameState,
                                   std::atomic<bool>& practicetool, std::atomic<float>& csPerMin)
 {
     if (!_inLobby)
@@ -56,6 +57,28 @@ void GamePoller::handleLobbyState(std::atomic<gameState>& gameState,
 
     if (_poller.update())
     {
+        if (!_playersLoaded)
+        {
+            std::vector<PlayerInfo> newPlayers(10);
+            LCU_LOG("Polling Player Info...");
+
+            _poller.getSessionInfo(lcuC, newPlayers);
+
+            if (newPlayers.empty())
+            {
+                practicetool.store(true);
+                QWACK_LOG("Gamemode is practice tool, skipping player info");
+            }
+
+            if (!practicetool.load())
+            {
+                getSessionPlayers(newPlayers, lcuC);
+            }
+            _playersLoaded = true;
+
+            _players = std::move(newPlayers);
+        }
+
         // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
         // This makes the INGAME state really mean loaded into the game, not just loading screen.
         if (_poller.getGameTime() > 0.5f)
@@ -79,28 +102,6 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
 
     if (_poller.update())
     {
-        if (!_playersLoaded)
-        {
-            std::vector<PlayerInfo> newPlayers(10);
-            LCU_LOG("Polling Player Info...");
-
-            _poller.getSessionInfo(lcuC, newPlayers);
-
-            if (newPlayers.empty())
-            {
-                practicetool.store(true);
-                QWACK_LOG("Gamemode is practice tool, skipping player info");
-            }
-
-            if (!practicetool.load())
-            {
-                getSessionPlayers(lcuC);
-            }
-            _playersLoaded = true;
-
-            _players = std::move(newPlayers);
-        }
-
         currentCS = _poller.getcs(_playerName);
         float gold = _poller.getGold();
         float time = _poller.getGameTime();
@@ -167,13 +168,13 @@ void GamePoller::getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcu
     }
 }
 
-void GamePoller::getSessionPlayers(LCUClient& lcuC)
+void GamePoller::getSessionPlayers(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC)
 {
     // Unfortunately my understanding of the LCU API led me here,
     // to get players' ranks, we need the puuid, but to get their in game
     // stats, we need the live API (yes, different).
     // this code is very messy for now.
-    for (auto& p : _players)
+    for (auto& p : newPlayers)
     {
         p.riotID = _poller.getPlayerName(lcuC, p.puuid);
         p.rank = _poller.getPlayerRank(lcuC, p.puuid);
@@ -182,9 +183,9 @@ void GamePoller::getSessionPlayers(LCUClient& lcuC)
         _poller.getPlayerRoleAndTeam(p);
     }
 
-    sortPlayers(_players);
+    sortPlayers(newPlayers);
 
-    for (const auto& p : _players)
+    for (const auto& p : newPlayers)
     {
         char rankLetter = p.rank[0];
         int tierNumber = romanToInt(p.rank.substr(p.rank.find(' ') + 1));
@@ -199,17 +200,20 @@ void GamePoller::getSessionPlayers(LCUClient& lcuC)
             {
                 oss << tierNumber;
             }
+
             _ranks.push_back(oss.str());
         }
         else
         {
+            // If invalid tier returned, empty string.
             _ranks.push_back("");
-            _ranksReady.store(true);
         }
 
         std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
                   << " role: " << p.role << " team: " << p.team << std::endl;
     }
+
+    _ranksReady.store(true);
     QWACK_LOG("Successfully loaded players.");
 }
 

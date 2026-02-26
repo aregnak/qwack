@@ -311,7 +311,7 @@ int main(int, char**)
                             break;
 
                         case gameState::LOBBY:
-                            gp.handleLobbyState(gameState, practicetool, csPerMin);
+                            gp.handleLobbyState(lcuC, gameState, practicetool, csPerMin);
                             break;
 
                         case gameState::INGAME:

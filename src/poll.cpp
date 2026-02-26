@@ -37,6 +37,15 @@ bool poll::update()
 
     gameDataCache = json::parse(res->body);
 
+    // auto body = loadJsonFile("./allgamedata2.json");
+    // if (body.empty())
+    // {
+    //     LCU_LOG("JSON file is empty or missing.");
+    //     return false;
+    // }
+
+    // gameDataCache = json::parse(body, nullptr, false);
+
     if (gameDataCache.is_discarded())
     {
         LCU_LOG("Failed to parse /allgamedata.");
@@ -129,6 +138,7 @@ std::string poll::getPlayerName(LCUClient& lcu, const std::string puuid)
 
     std::stringstream nstream;
     nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
+    std::cout << nstream.str();
 
     return nstream.str();
 }
