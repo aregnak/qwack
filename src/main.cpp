@@ -261,27 +261,25 @@ int main(int, char**)
             ImVec2((screenWidth / 2.0f) - (itemSumSize.x / 2.0f), screenHeight / 3.3f + (i * 80));
     }
 
-    std::vector<std::string> ranks;
-    std::vector<int> itemGoldDiff(5);
-    std::mutex dataMutex;
+    // std::vector<int> itemGoldDiff(5);
+    // std::atomic<float> currentGold = 500.0f;
+    // std::atomic<float> gameTime = 0.0f;
+
+    // Initial game state of closed (league not open).
 
     std::atomic<bool> running = true;
     std::atomic<bool> practicetool = false;
 
     std::atomic<float> csPerMin = -1.0f;
-    // std::atomic<float> currentGold = 500.0f;
-    // std::atomic<float> gameTime = 0.0f;
-
-    // Initial game state of closed (league not open).
     std::atomic<gameState> gameState = gameState::CLOSED;
+
+    GamePoller gp;
 
     // Polling thread.
     std::thread lcuThread(
         [&]()
         {
             auto lastPoll = std::chrono::steady_clock::now();
-
-            GamePoller gp;
 
             LCUClient lcuC;
 
@@ -313,12 +311,11 @@ int main(int, char**)
                             break;
 
                         case gameState::LOBBY:
-                            gp.handleLobbyState(gameState, ranks, practicetool, csPerMin);
+                            gp.handleLobbyState(gameState, practicetool, csPerMin);
                             break;
 
                         case gameState::INGAME:
-                            gp.handleInGameState(lcuC, ranks, csPerMin, gameState, practicetool,
-                                                 dataMutex);
+                            gp.handleInGameState(lcuC, csPerMin, gameState, practicetool);
                             break;
                     }
 
@@ -339,9 +336,11 @@ int main(int, char**)
 
     // Main thread.
     SDL_Event event;
-    bool inLobby = true;
     bool windowHidden = false;
     bool tabDown = false;
+    bool gotRanks = false;
+
+    std::vector<std::string> renderRanks;
 
     while (running.load())
     {
@@ -386,6 +385,12 @@ int main(int, char**)
         // Focus checking and key checking.
         if (gameState.load() == gameState::INGAME)
         {
+            if (!gotRanks && gp.isRanksReady())
+            {
+                renderRanks = gp.getRanks();
+                gotRanks = true;
+            }
+
             if (isLeagueFocused())
             {
                 if (windowHidden)
@@ -454,26 +459,33 @@ int main(int, char**)
                                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                                      ImGuiWindowFlags_NoFocusOnAppearing);
 
-                    ImGui::Text(ranks[num].c_str());
+                    ImGui::Text(renderRanks[num].c_str());
                     ImGui::End();
                     num++;
                 }
 
-                num = 0;
-                for (const auto& pos : itemPoss)
-                {
-                    ImGui::SetNextWindowBgAlpha(0.4f);
-                    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-                    ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
-                    ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
-                                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                                     ImGuiWindowFlags_NoFocusOnAppearing);
+                // num = 0;
+                // for (const auto& pos : itemPoss)
+                // {
+                //     ImGui::SetNextWindowBgAlpha(0.4f);
+                //     ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+                //     ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
+                //     ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
+                //                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                //                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                //                      ImGuiWindowFlags_NoFocusOnAppearing);
 
-                    ImGui::Text("%d", itemGoldDiff[num]);
-                    ImGui::End();
-                    num++;
-                }
+                //     ImGui::Text("%d", itemGoldDiff[num]);
+                //     ImGui::End();
+                //     num++;
+                // }
+            }
+        }
+        else
+        {
+            if (gotRanks)
+            {
+                gotRanks = false;
             }
         }
 

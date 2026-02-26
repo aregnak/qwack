@@ -6,6 +6,7 @@
 
 GamePoller::GamePoller()
     : _players(10)
+    , _ranksReady(false) // Not sure about this
 {
     //
 }
@@ -45,12 +46,11 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
 }
 
 void GamePoller::handleLobbyState(std::atomic<gameState>& gameState,
-                                  std::vector<std::string>& ranks, std::atomic<bool>& practicetool,
-                                  std::atomic<float>& csPerMin)
+                                  std::atomic<bool>& practicetool, std::atomic<float>& csPerMin)
 {
     if (!_inLobby)
     {
-        resetInGameCache(ranks, practicetool, csPerMin);
+        resetInGameCache(practicetool, csPerMin);
         _inLobby = true;
     }
 
@@ -65,9 +65,9 @@ void GamePoller::handleLobbyState(std::atomic<gameState>& gameState,
     }
 }
 
-void GamePoller::handleInGameState(LCUClient& lcuC, std::vector<std::string>& ranks,
-                                   std::atomic<float>& csPerMin, std::atomic<gameState>& gameState,
-                                   std::atomic<bool>& practicetool, std::mutex& dataMutex)
+void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin,
+                                   std::atomic<gameState>& gameState,
+                                   std::atomic<bool>& practicetool)
 {
     static int currentCS = 0;
 
@@ -82,7 +82,6 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::vector<std::string>& ra
         if (!_playersLoaded)
         {
             std::vector<PlayerInfo> newPlayers(10);
-            std::vector<std::string> newRanks;
             LCU_LOG("Polling Player Info...");
 
             _poller.getSessionInfo(lcuC, newPlayers);
@@ -95,13 +94,11 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::vector<std::string>& ra
 
             if (!practicetool.load())
             {
-                getSessionPlayers(newRanks, lcuC);
+                getSessionPlayers(lcuC);
             }
             _playersLoaded = true;
 
-            std::lock_guard<std::mutex> lock(dataMutex);
             _players = std::move(newPlayers);
-            ranks = std::move(newRanks);
         }
 
         currentCS = _poller.getcs(_playerName);
@@ -170,7 +167,7 @@ void GamePoller::getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcu
     }
 }
 
-void GamePoller::getSessionPlayers(std::vector<std::string>& newRanks, LCUClient& lcuC)
+void GamePoller::getSessionPlayers(LCUClient& lcuC)
 {
     // Unfortunately my understanding of the LCU API led me here,
     // to get players' ranks, we need the puuid, but to get their in game
@@ -202,11 +199,12 @@ void GamePoller::getSessionPlayers(std::vector<std::string>& newRanks, LCUClient
             {
                 oss << tierNumber;
             }
-            newRanks.push_back(oss.str());
+            _ranks.push_back(oss.str());
         }
         else
         {
-            newRanks.push_back("");
+            _ranks.push_back("");
+            _ranksReady.store(true);
         }
 
         std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
@@ -252,13 +250,14 @@ void GamePoller::getCSPM(std::atomic<float>& csPerMin, int currentCS, float time
     }
 }
 
-void GamePoller::resetInGameCache(std::vector<std::string>& ranks, std::atomic<bool>& practicetool,
-                                  std::atomic<float>& csPerMin)
+void GamePoller::resetInGameCache(std::atomic<bool>& practicetool, std::atomic<float>& csPerMin)
 {
-    ranks.clear();
-    _players = std::vector<PlayerInfo>(10);
+    _ranks.clear();
+    _ranksReady.store(false);
 
+    _players = std::vector<PlayerInfo>(10);
     _playersLoaded = false;
+
     practicetool.store(false);
     csPerMin.store(0.0f);
 
@@ -275,4 +274,16 @@ void GamePoller::setPrintedWaitingForClient(bool state)
 {
     _printedWaitingForClient = state;
     //
+}
+
+const bool GamePoller::isRanksReady()
+{
+    return _ranksReady.load();
+    //
+}
+
+std::vector<std::string> GamePoller::getRanks()
+{
+    std::lock_guard<std::mutex> lock(_dataMutex);
+    return _ranks;
 }
