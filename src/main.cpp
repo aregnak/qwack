@@ -301,8 +301,7 @@ int main(int, char**)
                             LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
                         }
 
-                        // ! Change this stupidass name.
-                        // * when i wrote "stupidass" my tired mind autocorrected ass to assh (ssh), laugh now.
+                        // ! Change this name.
                         gp.setPrintedWaitingForClient(false);
                     }
 
