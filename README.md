@@ -1,24 +1,31 @@
 # qwack
 
 ### Description
+
 A simple League of Legends companion app capable of displaying in game statistics using DX11, SDL3, and ImGui.
 
 ### Features
+
 - CS/min display
 - Current season player ranks
 - Item gold diff per lane (soon)
 - More to come soon!
 
 ### External Dependencies
+
 - SDL3
 - ImGui
 - OpenSSL & Crypto
+
 You will also need MSVC to build this project.
 
 ### How To Build
+
 #### CMAKE
+
 You need the OpenSSL library, if you got them using vcpkg, build using:
 (Make sure to change the path to vcpkg before running)
+
 ```bash
 cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake
 
