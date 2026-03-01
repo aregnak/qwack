@@ -5,12 +5,43 @@ Window::Window() {}
 Window::~Window() { Cleanup(); }
 
 // Public members.
-void Window::Render()
+void Window::BeginFrame()
 {
     g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
     const float clear_color[4] = { 0.f, 0.f, 0.f, 0.f };
     g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
+}
+
+void Window::EndFrame()
+{
     g_pSwapChain->Present(1, 0); // With vsync
+}
+
+void Window::Cleanup()
+{
+    if (g_mainRenderTargetView)
+    {
+        g_mainRenderTargetView->Release();
+        g_mainRenderTargetView = nullptr;
+    }
+
+    if (g_pSwapChain)
+    {
+        g_pSwapChain->Release();
+        g_pSwapChain = nullptr;
+    }
+
+    if (g_pd3dDeviceContext)
+    {
+        g_pd3dDeviceContext->Release();
+        g_pd3dDeviceContext = nullptr;
+    }
+
+    if (g_pd3dDevice)
+    {
+        g_pd3dDevice->Release();
+        g_pd3dDevice = nullptr;
+    }
 }
 
 // Protected members.
@@ -68,31 +99,4 @@ bool Window::InitD3D(HWND hwnd)
 
     CreateRenderTarget();
     return true;
-}
-
-void Window::Cleanup()
-{
-    if (g_mainRenderTargetView)
-    {
-        g_mainRenderTargetView->Release();
-        g_mainRenderTargetView = nullptr;
-    }
-
-    if (g_pSwapChain)
-    {
-        g_pSwapChain->Release();
-        g_pSwapChain = nullptr;
-    }
-
-    if (g_pd3dDeviceContext)
-    {
-        g_pd3dDeviceContext->Release();
-        g_pd3dDeviceContext = nullptr;
-    }
-
-    if (g_pd3dDevice)
-    {
-        g_pd3dDevice->Release();
-        g_pd3dDevice = nullptr;
-    }
 }

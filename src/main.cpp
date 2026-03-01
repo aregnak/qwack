@@ -109,7 +109,7 @@ int main(int, char**)
     // Friendly welcome message!
     QWACK_LOG("Thank you for choosing (or being forced to) try my program, Enjoy!");
 
-    // CS/min screen. Static until I add dynamic placement.
+    // CS/min screen. Dynamic placement, but only tested on 1920x1200.
     ImVec2 cspmSize = ImVec2(120, 30);
     ImVec2 cspmPos = ImVec2((screenWidth - (cspmSize.x * 1.2)), screenHeight / 2.5);
     QWACK_LOG("CS/Min overlay pos: " << cspmPos.x << " " << cspmPos.y);
@@ -119,6 +119,7 @@ int main(int, char**)
 
     // Create rank overlay positions. 10 in total, one for each player.
     // Please don't move the scoreboard in game.
+    // Also dynamic placement, but only tested on 1920x1200.
     for (int i = 0; i < rankPoss.size(); i++)
     {
         // Order team ranks
@@ -132,26 +133,23 @@ int main(int, char**)
         }
     }
 
+    // Item gold diff overlay positions, 5 in total, one for each lane.
+    // Also dynamic placement, but only tested on 1920x1200.
     ImVec2 itemSumSize = ImVec2(50, 30);
     std::vector<ImVec2> itemPoss(5);
 
     for (int i = 0; i < itemPoss.size(); i++)
     {
-        // Order team ranks
-        // Screen width: centered, screen height: every whatever amount is down there, it works.
         itemPoss[i] =
             ImVec2((screenWidth / 2.0f) - (itemSumSize.x / 2.0f), screenHeight / 3.3f + (i * 80));
     }
-
-    // std::atomic<float> currentGold = 500.0f;
-    // std::atomic<float> gameTime = 0.0f;
-
-    // Initial game state of closed (league not open).
 
     std::atomic<bool> running = true;
     std::atomic<bool> practicetool = false;
 
     std::atomic<float> csPerMin = -1.0f;
+
+    // Initial game state of closed (league not open).
     std::atomic<gameState> gameState = gameState::CLOSED;
 
     GamePoller gp;
@@ -379,8 +377,9 @@ int main(int, char**)
 
         // Render
         ImGui::Render();
-        overlayWindow.Cleanup();
+        overlayWindow.BeginFrame();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+        overlayWindow.EndFrame();
 
         // Limit to 30 fps.
         SDL_Delay(33);
@@ -388,6 +387,7 @@ int main(int, char**)
 
     // Cleanup
     running.store(false);
+
     if (lcuThread.joinable())
     {
         lcuThread.join();
@@ -397,6 +397,7 @@ int main(int, char**)
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
+    overlayWindow.Cleanup();
     SDL_DestroyWindow(window);
     SDL_Quit();
 

@@ -20,14 +20,16 @@ public:
     virtual ~Window();
 
     virtual bool Create() = 0; // Override in derrived classes
-    virtual void Render();
+    virtual void BeginFrame();
+    virtual void EndFrame();
     virtual void Cleanup();
+
+    ID3D11Device* g_pd3dDevice = nullptr;
+    ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
 
 protected:
     SDL_Window* window = nullptr;
 
-    ID3D11Device* g_pd3dDevice = nullptr;
-    ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
     IDXGISwapChain* g_pSwapChain = nullptr;
     ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
 
