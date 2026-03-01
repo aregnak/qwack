@@ -1,4 +1,5 @@
 #include "poll.h"
+#include "log.h"
 #include "parser.h"
 #include "playerInfo.h"
 #include <cstddef>
@@ -6,6 +7,8 @@
 #include <thread>
 
 using json = nlohmann::json;
+
+#define DEBUG_ENABLED false
 
 poll::poll()
     : cli("127.0.0.1", 2999)
@@ -20,31 +23,33 @@ poll::poll()
 
 bool poll::update()
 {
+#if DEBUG_ENABLED
+    auto body = loadJsonFile("./allgamedata2.json");
+    if (body.empty())
+    {
+        LCU_LOG("JSON file is empty or missing.");
+        return false;
+    }
+
+    gameDataCache = json::parse(body, nullptr, false);
+
+#else
     res = cli.Get("/liveclientdata/allgamedata");
 
     if (!res) // if res is a nullptr
     {
-        //std::cout << "Not in game.";
         return false;
     }
 
-    //LCU_LOG("HTTP status: " << res->status);
-
     if (res->status != 200)
     {
+        LCU_LOG("Live client data status: " << res->status);
         return false;
     }
 
     gameDataCache = json::parse(res->body);
 
-    // auto body = loadJsonFile("./allgamedata2.json");
-    // if (body.empty())
-    // {
-    //     LCU_LOG("JSON file is empty or missing.");
-    //     return false;
-    // }
-
-    // gameDataCache = json::parse(body, nullptr, false);
+#endif // DEBUG_ENABLED
 
     if (gameDataCache.is_discarded())
     {
@@ -84,10 +89,15 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
 
 void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
 {
+#if DEBUG_ENABLED
+    auto body = loadJsonFile("./session2.json");
+    auto session = json::parse(body, nullptr, false);
+
+#else
     auto res = lcu.get("/lol-gameflow/v1/session");
     auto session = json::parse(res->body);
-    // auto body = loadJsonFile("./session2.json");
-    // auto session = json::parse(body, nullptr, false);
+
+#endif // DEBUG_ENABLED
 
     const std::string gameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
     LCU_LOG("Game mode: " << gameMode);
@@ -174,29 +184,20 @@ std::string poll::getPlayerRank(LCUClient& lcu, const std::string puuid)
 
 void poll::getPlayerRoleAndTeam(PlayerInfo& player)
 {
-    // res = cli.Get("/liveclientdata/allgamedata");
-
-    // auto gameData = json::parse(res->body);
-    // auto body = loadJsonFile("./allgamedata2.json");
-
-    // auto gameData = json::parse(body, nullptr, false);
-
     for (const auto& j : gameDataCache["allPlayers"])
     {
         if (j["championName"] == player.champ)
         {
             player.role = j["position"];
             player.team = j["team"];
+            QWACK_LOG("POS: " << player.role);
+            QWACK_LOG("TEAM: " << player.team);
         }
     }
 }
 
 void poll::getPlayerItemIDs(PlayerInfo& player)
 {
-    // auto body = loadJsonFile("./allgamedata2.json");
-
-    // auto gameData = json::parse(body, nullptr, false);
-
     for (const auto& j : gameDataCache["allPlayers"])
     {
         if (j["championName"] == player.champ)

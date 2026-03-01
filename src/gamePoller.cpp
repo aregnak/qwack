@@ -9,7 +9,7 @@
 
 GamePoller::GamePoller()
     : _players(10)
-    , itemGoldDiff(5)
+    , _itemGoldDiff(5)
     , _ranksReady(false)
 {
     //
@@ -174,6 +174,12 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
 
                     _itemGoldDiff[i] = (currentPlayer.totalItemPrice - laneOpponent.totalItemPrice);
                 }
+
+                for (int i : _itemGoldDiff)
+                {
+                    QWACK_LOG("DIFF: " << i);
+                }
+                std::cout << "\n";
                 _lastPoll = _now;
             }
         }
@@ -223,6 +229,8 @@ void GamePoller::getSessionPlayers(std::vector<PlayerInfo>& newPlayers, LCUClien
 
         p.champ = _poller.getChampionNameById(p.champID);
         _poller.getPlayerRoleAndTeam(p);
+        std::cout << "riotID: " << p.riotID << " rank: " << p.rank << " role: " << p.role
+                  << " team: " << p.team << std::endl;
     }
 
     sortPlayers(newPlayers);
