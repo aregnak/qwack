@@ -56,8 +56,9 @@ private:
     std::mutex _dataMutex;
     std::atomic<bool> _ranksReady;
 
-    std::vector<int> itemGoldDiff;
+    std::vector<int> _itemGoldDiff;
 
     // :(
+    std::chrono::time_point<std::chrono::steady_clock> _now = std::chrono::steady_clock::now();
     std::chrono::time_point<std::chrono::steady_clock> _lastPoll = std::chrono::steady_clock::now();
 };

@@ -3,6 +3,8 @@
 #include "lcuClient.h"
 #include "playerInfo.h"
 #include "log.h"
+#include <chrono>
+#include <string>
 #include <wingdi.h>
 
 GamePoller::GamePoller()
@@ -50,6 +52,22 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
 void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameState,
                                   std::atomic<bool>& practicetool, std::atomic<float>& csPerMin)
 {
+    // Test code don't worry about this.
+    // static PlayerInfo p;
+
+    // p.itemIDs.emplace_back(std::string("6609"));
+    // p.itemIDs.emplace_back(std::string("3071"));
+    // p.itemIDs.emplace_back(std::string("3089"));
+    // p.itemIDs.emplace_back(std::string("1058"));
+
+    // static int test;
+    // for (const auto& i : p.itemIDs)
+    // {
+    //     QWACK_LOG("Item " << i);
+    //     test = _poller.getItemPrice(i);
+    //     QWACK_LOG(test);
+    // }
+
     if (!_inLobby)
     {
         resetInGameCache(practicetool, csPerMin);
@@ -112,28 +130,51 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
         // Item price polling
         if (!practicetool)
         {
-            auto now = std::chrono::steady_clock::now();
+            _now = std::chrono::steady_clock::now();
 
-            if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll).count() > 2)
+            if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 2)
             {
                 for (size_t i = 0; i < _players.size() / 2; i++)
                 {
                     PlayerInfo& currentPlayer = _players[i];
                     PlayerInfo& laneOpponent = _players[i + 5];
 
-                    _poller.getPlayerItems(currentPlayer);
-                    _poller.getPlayerItems(laneOpponent);
+                    _poller.getPlayerItemIDs(currentPlayer);
+                    _poller.getPlayerItemIDs(laneOpponent);
 
-                    _poller.getPlayerItemSum(currentPlayer);
-                    _poller.getPlayerItemSum(laneOpponent);
+                    // _poller.getPlayerItemSum(currentPlayer);
+                    // _poller.getPlayerItemSum(laneOpponent);
 
                     // ! Add a for loop that goes through itemIDs and checks if theres a difference from last poll
                     // ORRRRR make that checking happen when getting itemIDs, and have a flag that tells us to:
-                    // T poll for that item's price, and add it to the total.
+                    // poll for that item's price, and add it to the total.
 
-                    // itemGoldDiff[i] = (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
+                    // std::thread itemPriceThread(
+                    //     [&]()
+                    //     {
+                    currentPlayer.totalItemPrice = 0;
+                    for (std::string& itemID : currentPlayer.itemIDs)
+                    {
+                        int price = _poller.getItemPrice(itemID);
+                        currentPlayer.totalItemPrice += price;
+                    }
+
+                    laneOpponent.totalItemPrice = 0;
+                    for (std::string& itemID : laneOpponent.itemIDs)
+                    {
+                        int price = _poller.getItemPrice(itemID);
+                        laneOpponent.totalItemPrice += price;
+                    }
+                    //     });
+
+                    // if (itemPriceThread.joinable())
+                    // {
+                    //     itemPriceThread.join();
+                    // }
+
+                    _itemGoldDiff[i] = (currentPlayer.totalItemPrice - laneOpponent.totalItemPrice);
                 }
-                lastPoll = now;
+                _lastPoll = _now;
             }
         }
     }
