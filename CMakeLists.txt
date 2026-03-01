@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Portable Windows build settings
-option(PORTABLE "Link MSVC runtime statically for portable Windows binaries" ON)
+option(PORTABLE "Link MSVC runtime statically for portable Windows binaries" OFF)
 
 if (MSVC)
     cmake_policy(SET CMP0091 NEW)
