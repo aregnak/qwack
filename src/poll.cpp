@@ -192,7 +192,7 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
     }
 }
 
-void poll::getPlayerItems(PlayerInfo& player)
+void poll::getPlayerItemIDs(PlayerInfo& player)
 {
     // auto body = loadJsonFile("./allgamedata2.json");
 
@@ -202,10 +202,12 @@ void poll::getPlayerItems(PlayerInfo& player)
     {
         if (j["championName"] == player.champ)
         {
+            // For now, clear all player itemIDs and store the new ones.
+            // Yes this is slow, but I will update this to a better algorithm once this feature works.
             player.itemIDs.clear();
             for (const auto& i : j["items"])
             {
-                player.itemIDs.push_back(std::to_string(j["itemID"].get<int>()));
+                player.itemIDs.push_back(std::to_string(i["itemID"].get<int>()));
             }
 
             break;

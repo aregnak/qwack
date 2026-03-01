@@ -7,6 +7,7 @@
 
 GamePoller::GamePoller()
     : _players(10)
+    , itemGoldDiff(5)
     , _ranksReady(false)
 {
     //
@@ -109,32 +110,32 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
         getCSPM(csPerMin, currentCS, time, gold);
 
         // Item price polling
-        // if (!practicetool)
-        // {
-        //     auto now = std::chrono::steady_clock::now();
+        if (!practicetool)
+        {
+            auto now = std::chrono::steady_clock::now();
 
-        //     std::lock_guard<std::mutex> lock(dataMutex);
+            if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll).count() > 2)
+            {
+                for (size_t i = 0; i < _players.size() / 2; i++)
+                {
+                    PlayerInfo& currentPlayer = _players[i];
+                    PlayerInfo& laneOpponent = _players[i + 5];
 
-        //     if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPoll)
-        //             .count() > 2)
-        //     {
-        //         for (size_t i = 0; i < players.size() / 2; i++)
-        //         {
-        //             PlayerInfo& currentPlayer = players[i];
-        //             PlayerInfo& laneOpponent = players[i + 5];
+                    _poller.getPlayerItems(currentPlayer);
+                    _poller.getPlayerItems(laneOpponent);
 
-        //             poller.getPlayerItems(currentPlayer);
-        //             poller.getPlayerItems(laneOpponent);
+                    _poller.getPlayerItemSum(currentPlayer);
+                    _poller.getPlayerItemSum(laneOpponent);
 
-        // poller.getPlayerItemSum(currentPlayer);
-        // poller.getPlayerItemSum(laneOpponent);
+                    // ! Add a for loop that goes through itemIDs and checks if theres a difference from last poll
+                    // ORRRRR make that checking happen when getting itemIDs, and have a flag that tells us to:
+                    // T poll for that item's price, and add it to the total.
 
-        // itemGoldDiff[i] =
-        //     (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
-        //         }
-        //         lastPoll = now;
-        //     }
-        // }
+                    // itemGoldDiff[i] = (currentPlayer.itemsPrice - laneOpponent.itemsPrice);
+                }
+                lastPoll = now;
+            }
+        }
     }
     else
     {

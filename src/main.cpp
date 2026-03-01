@@ -261,7 +261,6 @@ int main(int, char**)
             ImVec2((screenWidth / 2.0f) - (itemSumSize.x / 2.0f), screenHeight / 3.3f + (i * 80));
     }
 
-    // std::vector<int> itemGoldDiff(5);
     // std::atomic<float> currentGold = 500.0f;
     // std::atomic<float> gameTime = 0.0f;
 

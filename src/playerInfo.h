@@ -11,13 +11,13 @@
 struct PlayerInfo
 {
     int champID = 0;
-    // int itemsPrice = 0;
     std::string champ;
     std::string puuid;
     std::string riotID;
     std::string rank;
     std::string role;
     std::string team;
+
     std::vector<std::string> itemIDs;
 
     PlayerInfo() = default;
