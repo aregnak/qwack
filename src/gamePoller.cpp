@@ -52,22 +52,6 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
 void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameState,
                                   std::atomic<bool>& practicetool, std::atomic<float>& csPerMin)
 {
-    // Test code don't worry about this.
-    // static PlayerInfo p;
-
-    // p.itemIDs.emplace_back(std::string("6609"));
-    // p.itemIDs.emplace_back(std::string("3071"));
-    // p.itemIDs.emplace_back(std::string("3089"));
-    // p.itemIDs.emplace_back(std::string("1058"));
-
-    // static int test;
-    // for (const auto& i : p.itemIDs)
-    // {
-    //     QWACK_LOG("Item " << i);
-    //     test = _poller.getItemPrice(i);
-    //     QWACK_LOG(test);
-    // }
-
     if (!_inLobby)
     {
         resetInGameCache(practicetool, csPerMin);
@@ -134,6 +118,8 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
 
             if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 2)
             {
+                _itemDiffReady.store(false);
+
                 for (size_t i = 0; i < _players.size() / 2; i++)
                 {
                     PlayerInfo& currentPlayer = _players[i];
@@ -175,12 +161,15 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
                     _itemGoldDiff[i] = (currentPlayer.totalItemPrice - laneOpponent.totalItemPrice);
                 }
 
-                for (int i : _itemGoldDiff)
-                {
-                    QWACK_LOG("DIFF: " << i);
-                }
-                std::cout << "\n";
+                // for (int i : _itemGoldDiff)
+                // {
+                //     QWACK_LOG("DIFF: " << i);
+                // }
+
+                // std::cout << "\n";
                 _lastPoll = _now;
+
+                _itemDiffReady.store(true);
             }
         }
     }
@@ -340,4 +329,17 @@ std::vector<std::string> GamePoller::getRanks()
 {
     std::lock_guard<std::mutex> lock(_dataMutex);
     return _ranks;
+}
+
+const bool GamePoller::isItemDiffReady()
+{
+    return _itemDiffReady.load();
+    //
+}
+
+std::vector<int> GamePoller::getItemGoldDiff()
+{
+    std::lock_guard<std::mutex> lock(_dataMutex);
+    return _itemGoldDiff;
+    //
 }

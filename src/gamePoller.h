@@ -34,6 +34,9 @@ public:
     const bool isRanksReady();
     std::vector<std::string> getRanks();
 
+    const bool isItemDiffReady();
+    std::vector<int> getItemGoldDiff();
+
 private:
     void connectToLCU(LCUInfo&);
     void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC);
@@ -56,6 +59,7 @@ private:
     std::mutex _dataMutex;
     std::atomic<bool> _ranksReady;
 
+    std::atomic<bool> _itemDiffReady;
     std::vector<int> _itemGoldDiff;
 
     // :(

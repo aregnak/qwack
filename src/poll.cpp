@@ -4,7 +4,6 @@
 #include "playerInfo.h"
 #include <cstddef>
 #include <string>
-#include <thread>
 
 using json = nlohmann::json;
 

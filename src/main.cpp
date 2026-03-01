@@ -339,6 +339,8 @@ int main(int, char**)
     bool tabDown = false;
     bool gotRanks = false;
 
+    std::vector<int> itemGoldDiff;
+
     std::vector<std::string> renderRanks;
 
     while (running.load())
@@ -388,6 +390,11 @@ int main(int, char**)
             {
                 renderRanks = gp.getRanks();
                 gotRanks = true;
+            }
+
+            if (gp.isItemDiffReady())
+            {
+                itemGoldDiff = gp.getItemGoldDiff();
             }
 
             if (isLeagueFocused())
@@ -463,21 +470,21 @@ int main(int, char**)
                     num++;
                 }
 
-                // num = 0;
-                // for (const auto& pos : itemPoss)
-                // {
-                //     ImGui::SetNextWindowBgAlpha(0.4f);
-                //     ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-                //     ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
-                //     ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
-                //                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                //                      ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                //                      ImGuiWindowFlags_NoFocusOnAppearing);
+                num = 0;
+                for (const auto& pos : itemPoss)
+                {
+                    ImGui::SetNextWindowBgAlpha(0.4f);
+                    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
+                    ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
+                    ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
+                                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                     ImGuiWindowFlags_NoFocusOnAppearing);
 
-                //     ImGui::Text("%d", itemGoldDiff[num]);
-                //     ImGui::End();
-                //     num++;
-                // }
+                    ImGui::Text("%d", itemGoldDiff[num]);
+                    ImGui::End();
+                    num++;
+                }
             }
         }
         else
