@@ -250,7 +250,7 @@ int main(int, char**)
         }
     }
 
-    ImVec2 itemSumSize = ImVec2(70, 30);
+    ImVec2 itemSumSize = ImVec2(50, 30);
     std::vector<ImVec2> itemPoss(5);
 
     for (int i = 0; i < itemPoss.size(); i++)
