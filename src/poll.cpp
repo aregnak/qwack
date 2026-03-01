@@ -191,6 +191,7 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
             player.team = j["team"];
             QWACK_LOG("POS: " << player.role);
             QWACK_LOG("TEAM: " << player.team);
+            break;
         }
     }
 }
@@ -222,6 +223,7 @@ int poll::getcs(const std::string& playerName)
         if (p["summonerName"].get<std::string>() == playerName)
         {
             cs = p["scores"]["creepScore"];
+            break;
         }
     }
 
