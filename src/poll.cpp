@@ -138,7 +138,6 @@ std::string poll::getPlayerName(LCUClient& lcu, const std::string puuid)
 
     std::stringstream nstream;
     nstream << name["gameName"].get<std::string>() << "#" << name["tagLine"].get<std::string>();
-    std::cout << nstream.str();
 
     return nstream.str();
 }
