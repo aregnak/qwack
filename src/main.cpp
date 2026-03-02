@@ -120,38 +120,6 @@ int main(int, char**)
     // Friendly welcome message!
     QWACK_LOG("Thank you for choosing (or being forced to) try my program, Enjoy!");
 
-    // CS/min screen. Dynamic placement, but only tested on 1920x1200.
-
-    ImVec2 rankSize = ImVec2(30, 30);
-    std::vector<ImVec2> rankPoss(10);
-
-    // Create rank overlay positions. 10 in total, one for each player.
-    // Please don't move the scoreboard in game.
-    // Also dynamic placement, but only tested on 1920x1200.
-    for (int i = 0; i < rankPoss.size(); i++)
-    {
-        // Order team ranks
-        if (i < 5)
-        {
-            rankPoss[i] = ImVec2(screenWidth / 5.5f, screenHeight / 3.3f + (i * 80));
-        }
-        else // Chaos team ranks
-        {
-            rankPoss[i] = ImVec2(screenWidth / 1.25f, screenHeight / 3.3f + ((i - 5) * 80));
-        }
-    }
-
-    // Item gold diff overlay positions, 5 in total, one for each lane.
-    // Also dynamic placement, but only tested on 1920x1200.
-    ImVec2 itemSumSize = ImVec2(50, 30);
-    std::vector<ImVec2> itemPoss(5);
-
-    for (int i = 0; i < itemPoss.size(); i++)
-    {
-        itemPoss[i] =
-            ImVec2((screenWidth / 2.0f) - (itemSumSize.x / 2.0f), screenHeight / 3.3f + (i * 80));
-    }
-
     std::atomic<bool> running = true;
     std::atomic<bool> practicetool = false;
 
@@ -377,37 +345,8 @@ int main(int, char**)
             // Ranks & item gold diff overlay
             if (tabDown)
             {
-                int num = 0;
-                for (const auto& pos : rankPoss)
-                {
-                    ImGui::SetNextWindowBgAlpha(0.4f);
-                    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-                    ImGui::SetNextWindowSize(rankSize, ImGuiCond_Always);
-                    ImGui::Begin(("RankedWindow##" + std::to_string(num)).c_str(), nullptr,
-                                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                                     ImGuiWindowFlags_NoFocusOnAppearing);
-
-                    ImGui::Text(renderRanks[num].c_str());
-                    ImGui::End();
-                    num++;
-                }
-
-                num = 0;
-                for (const auto& pos : itemPoss)
-                {
-                    ImGui::SetNextWindowBgAlpha(0.4f);
-                    ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
-                    ImGui::SetNextWindowSize(itemSumSize, ImGuiCond_Always);
-                    ImGui::Begin(("ItemWindow##" + std::to_string(num)).c_str(), nullptr,
-                                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                     ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                                     ImGuiWindowFlags_NoFocusOnAppearing);
-
-                    ImGui::Text("%d", itemGoldDiff[num]);
-                    ImGui::End();
-                    num++;
-                }
+                overlay.renderRanks(renderRanks);
+                overlay.renderGoldDiff(itemGoldDiff);
             }
 
             ImGui::Render();
