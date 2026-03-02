@@ -44,6 +44,12 @@ void Window::Cleanup()
     }
 }
 
+SDL_Window* Window::getWindow()
+{
+    return window;
+    //
+}
+
 // Protected members.
 void Window::CreateRenderTarget()
 {

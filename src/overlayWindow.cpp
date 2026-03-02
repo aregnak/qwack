@@ -1,4 +1,10 @@
+#include <iostream>
 #include "overlayWindow.h"
+#include "log.h"
+
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_dx11.h"
 
 OverlayWindow::OverlayWindow(float screenWidth, float screenHeight)
     : _screenWidth(screenWidth)
@@ -8,19 +14,20 @@ OverlayWindow::OverlayWindow(float screenWidth, float screenHeight)
 
 bool OverlayWindow::Create()
 {
+    QWACK_LOG("Initializing Overlay Window.");
     SDL_WindowFlags window_flags =
         (SDL_WindowFlags)(SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS |
                           SDL_WINDOW_TRANSPARENT | SDL_WINDOW_NOT_FOCUSABLE);
 
-    _window = SDL_CreateWindow("CS/min Overlay", _screenWidth, _screenHeight, window_flags);
+    window = SDL_CreateWindow("CS/min Overlay", _screenWidth, _screenHeight, window_flags);
 
-    if (!_window)
+    if (!window)
     {
         SDL_Log("SDL_CreateWindow Error: %s", SDL_GetError());
         return false;
     }
 
-    SDL_PropertiesID props = SDL_GetWindowProperties(_window);
+    SDL_PropertiesID props = SDL_GetWindowProperties(window);
     HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 
     LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
@@ -35,14 +42,8 @@ bool OverlayWindow::Create()
         return false;
     }
 
-    SDL_SetWindowPosition(_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-    SDL_ShowWindow(_window);
+    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
+    QWACK_LOG("Overlay Window Finished Initializing.");
     return true;
-}
-
-SDL_Window* OverlayWindow::getWindow()
-{
-    return _window;
-    //
 }

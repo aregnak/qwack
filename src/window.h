@@ -27,8 +27,11 @@ public:
     ID3D11Device* g_pd3dDevice = nullptr;
     ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
 
+    SDL_Window* getWindow();
+
 protected:
     SDL_Window* window = nullptr;
+    SDL_WindowID windowID = 0;
 
     IDXGISwapChain* g_pSwapChain = nullptr;
     ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
