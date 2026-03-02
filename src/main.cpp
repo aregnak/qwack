@@ -91,28 +91,28 @@ int main(int, char**)
         QWACK_LOG("Primary screen work area: " << screenWidth << "x" << screenHeight);
     }
 
-    OverlayWindow overlayWindow(screenWidth, screenHeight);
-    overlayWindow.Create();
-    SDL_Window* overlay = overlayWindow.getWindow();
+    OverlayWindow overlay(screenWidth, screenHeight);
+    overlay.Create();
+    SDL_Window* overlayWindow = overlay.getWindow();
 
-    MenuWindow menuWindow;
-    menuWindow.Create();
-    SDL_Window* menu = menuWindow.getWindow();
+    MenuWindow menu;
+    menu.Create();
+    SDL_Window* menuWindow = menu.getWindow();
 
     // !!!!!
     // TODO: Right now, there is a device and device context for each window. Merge them together.
     // ImGui overlay window context
     ImGuiContext* overlayCtx = ImGui::CreateContext();
     ImGui::SetCurrentContext(overlayCtx);
-    ImGui_ImplSDL3_InitForD3D(overlay);
-    ImGui_ImplDX11_Init(overlayWindow.g_pd3dDevice, overlayWindow.g_pd3dDeviceContext);
+    ImGui_ImplSDL3_InitForD3D(overlayWindow);
+    ImGui_ImplDX11_Init(overlay.g_pd3dDevice, overlay.g_pd3dDeviceContext);
     ImGui::StyleColorsDark();
 
     // Menu context
     ImGuiContext* menuCtx = ImGui::CreateContext();
     ImGui::SetCurrentContext(menuCtx);
-    ImGui_ImplSDL3_InitForD3D(menu);
-    ImGui_ImplDX11_Init(menuWindow.g_pd3dDevice, menuWindow.g_pd3dDeviceContext);
+    ImGui_ImplSDL3_InitForD3D(menuWindow);
+    ImGui_ImplDX11_Init(menu.g_pd3dDevice, menu.g_pd3dDeviceContext);
     ImGui::StyleColorsDark();
 
     // Finish all DX11, SDL, and ImGui setup.
@@ -242,7 +242,7 @@ int main(int, char**)
                 running.store(false);
             }
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
-                event.window.windowID == SDL_GetWindowID(menu))
+                event.window.windowID == SDL_GetWindowID(menuWindow))
             {
                 running.store(false);
             }
@@ -250,7 +250,7 @@ int main(int, char**)
             ImGui::SetCurrentContext(overlayCtx);
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
-                event.window.windowID == SDL_GetWindowID(overlay))
+                event.window.windowID == SDL_GetWindowID(overlayWindow))
             {
                 running.store(false);
             }
@@ -271,7 +271,7 @@ int main(int, char**)
         {
             ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
             int w, h;
-            SDL_GetWindowSize(menu, &w, &h);
+            SDL_GetWindowSize(menuWindow, &w, &h);
             ImGui::SetNextWindowSize(ImVec2((float)w, (float)h), ImGuiCond_Always);
 
             ImGui::Begin("Settings", nullptr,
@@ -314,9 +314,9 @@ int main(int, char**)
         }
 
         ImGui::Render();
-        menuWindow.BeginFrame();
+        menu.BeginFrame();
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        menuWindow.EndFrame();
+        menu.EndFrame();
 
         // Focus checking and key checking.
         if (gameState.load() == gameState::INGAME)
@@ -336,7 +336,7 @@ int main(int, char**)
             {
                 if (windowHidden)
                 {
-                    SDL_ShowWindow(overlay);
+                    SDL_ShowWindow(overlayWindow);
                     windowHidden = false;
                 }
             }
@@ -344,7 +344,7 @@ int main(int, char**)
             {
                 if (!windowHidden)
                 {
-                    SDL_HideWindow(overlay);
+                    SDL_HideWindow(overlayWindow);
                     windowHidden = true;
                 }
             }
@@ -371,7 +371,7 @@ int main(int, char**)
             // CS/Min overlay
             if (!windowHidden)
             {
-                overlayWindow.renderCspm(csPerMin.load());
+                overlay.renderCspm(csPerMin.load());
             }
 
             // Ranks & item gold diff overlay
@@ -411,9 +411,9 @@ int main(int, char**)
             }
 
             ImGui::Render();
-            overlayWindow.BeginFrame();
+            overlay.BeginFrame();
             ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-            overlayWindow.EndFrame();
+            overlay.EndFrame();
         }
         else
         {
@@ -435,16 +435,16 @@ int main(int, char**)
         lcuThread.join();
     }
 
-    overlayWindow.Cleanup();
-    SDL_DestroyWindow(overlay);
+    overlay.Cleanup();
+    SDL_DestroyWindow(overlayWindow);
 
     ImGui::SetCurrentContext(overlayCtx);
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext(overlayCtx);
 
-    menuWindow.Cleanup();
-    SDL_DestroyWindow(menu);
+    menu.Cleanup();
+    SDL_DestroyWindow(menuWindow);
 
     ImGui::SetCurrentContext(menuCtx);
     ImGui_ImplDX11_Shutdown();
