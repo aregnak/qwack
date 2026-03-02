@@ -1,5 +1,6 @@
 #pragma once
 
+#include "game.h"
 #include "window.h"
 
 #include <vector>
@@ -20,6 +21,13 @@ public:
     void renderRanks(std::vector<std::string> renderRanks);
     void renderGoldDiff(std::vector<int> itemGoldDiff);
 
+    // Call every frame — handles show/hide based on game state + League focus.
+    // Returns true if the overlay is visible after the call.
+    bool handleWindowVisibility(gameState state, HWND leagueHwnd);
+    bool isVisible() const;
+
+    void setVisibility(bool state);
+
 private:
     // CS/min screen. Dynamic placement, but only tested on 1920x1200.
     ImVec2 cspmSize;
@@ -33,4 +41,6 @@ private:
 
     float _screenWidth = 0;
     float _screenHeight = 0;
+
+    bool _visible = false;
 };

@@ -164,9 +164,8 @@ int main(int, char**)
 
     // Main thread.
     SDL_Event event;
-    bool windowHidden = false;
-    bool tabDown = false;
     bool gotRanks = false;
+    HWND leagueHwnd = nullptr;
 
     std::vector<int> itemGoldDiff;
 
@@ -203,56 +202,14 @@ int main(int, char**)
             QWACK_LOG("Killswitch activated. Exiting.");
             running.store(false);
         }
+
+        // Render menu window
         ImGui::SetCurrentContext(menuCtx);
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        // Menu window
-        {
-            ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-            int w, h;
-            SDL_GetWindowSize(menuWindow, &w, &h);
-            ImGui::SetNextWindowSize(ImVec2((float)w, (float)h), ImGuiCond_Always);
-
-            ImGui::Begin("Settings", nullptr,
-                         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
-
-            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Qwack Settings");
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            // ! Placeholder, just for testing.
-            static bool x = false;
-            static bool y = false;
-            static bool z = true;
-            // Overlay toggles
-            if (ImGui::CollapsingHeader("Overlays", ImGuiTreeNodeFlags_DefaultOpen))
-            {
-                ImGui::Checkbox("Show CS/min Overlay", &x);
-                ImGui::Checkbox("Show Rank Overlay", &y);
-                ImGui::Checkbox("Show Item Gold Diff Overlay", &z);
-                ImGui::Spacing();
-            }
-
-            ImGui::Spacing();
-
-            if (ImGui::CollapsingHeader("Hotkeys"))
-            {
-                ImGui::Text("Kill Switch: Page Down");
-                ImGui::Text("(Tab shows scoreboard overlays in game)");
-            }
-
-            ImGui::Spacing();
-
-            if (ImGui::CollapsingHeader("About"))
-            {
-                ImGui::Text("Qwack - League of Legends Overlay");
-            }
-
-            ImGui::End();
-        }
+        menu.renderMenu(menuWindow);
 
         ImGui::Render();
         menu.BeginFrame();
@@ -262,6 +219,10 @@ int main(int, char**)
         // Focus checking and key checking.
         if (gameState.load() == gameState::INGAME)
         {
+            // Cache League window handle once per game session.
+            if (!leagueHwnd)
+                leagueHwnd = findLeagueWindow();
+
             if (!gotRanks && gp.isRanksReady())
             {
                 renderRanks = gp.getRanks();
@@ -273,53 +234,31 @@ int main(int, char**)
                 itemGoldDiff = gp.getItemGoldDiff();
             }
 
-            if (isLeagueFocused())
-            {
-                if (windowHidden)
-                {
-                    SDL_ShowWindow(overlayWindow);
-                    windowHidden = false;
-                }
-            }
-            else
-            {
-                if (!windowHidden)
-                {
-                    SDL_HideWindow(overlayWindow);
-                    windowHidden = true;
-                }
-            }
-
-            // Check if pressing tab (scoreboard).
-            if (!practicetool.load())
-            {
-                if (!windowHidden && IsTabDown())
-                {
-                    tabDown = true;
-                }
-                else
-                {
-                    tabDown = false;
-                }
-            }
-
             ImGui::SetCurrentContext(overlayCtx);
             ImGui_ImplDX11_NewFrame();
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
 
+            // Overlay decides its own visibility (in-game + League focused).
+            overlay.handleWindowVisibility(gameState.load(), leagueHwnd);
+
             // Overlays are down here.
             // CS/Min overlay
-            if (!windowHidden)
+
+            if (overlay.isVisible())
             {
                 overlay.renderCspm(csPerMin.load());
             }
 
             // Ranks & item gold diff overlay
-            if (tabDown)
+            // Check if pressing tab (scoreboard).
+            if (!practicetool.load())
             {
-                overlay.renderRanks(renderRanks);
-                overlay.renderGoldDiff(itemGoldDiff);
+                if (overlay.isVisible() && IsTabDown())
+                {
+                    overlay.renderRanks(renderRanks);
+                    overlay.renderGoldDiff(itemGoldDiff);
+                }
             }
 
             ImGui::Render();
@@ -333,6 +272,12 @@ int main(int, char**)
             {
                 gotRanks = false;
             }
+
+            // Game ended — reset cached handle & hide overlay.
+            if (leagueHwnd)
+                leagueHwnd = nullptr;
+
+            overlay.handleWindowVisibility(gameState.load(), nullptr);
         }
 
         // Limit to 30 fps.

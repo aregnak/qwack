@@ -2,6 +2,7 @@
 #include <string>
 #include "overlayWindow.h"
 #include "log.h"
+#include "game.h"
 
 OverlayWindow::OverlayWindow(float screenWidth, float screenHeight)
     : _screenWidth(screenWidth)
@@ -81,6 +82,7 @@ bool OverlayWindow::Create()
     return true;
 }
 
+// Render functions
 void OverlayWindow::renderCspm(float cspm)
 {
     ImGui::SetNextWindowBgAlpha(0.4f);
@@ -137,5 +139,42 @@ void OverlayWindow::renderGoldDiff(std::vector<int> itemGoldDiff)
         ImGui::Text("%d", itemGoldDiff[num]);
         ImGui::End();
         num++;
+    }
+}
+
+bool OverlayWindow::handleWindowVisibility(gameState state, HWND leagueHwnd)
+{
+    const bool shouldShow = (state == gameState::INGAME) && isLeagueFocused(leagueHwnd);
+
+    if (shouldShow && !_visible)
+    {
+        SDL_ShowWindow(window);
+        _visible = true;
+    }
+    else if (!shouldShow && _visible)
+    {
+        SDL_HideWindow(window);
+        _visible = false;
+    }
+
+    return _visible;
+}
+
+bool OverlayWindow::isVisible() const
+{
+    return _visible;
+}
+
+void OverlayWindow::setVisibility(bool state)
+{
+    _visible = state;
+
+    if (_visible)
+    {
+        SDL_ShowWindow(window);
+    }
+    else
+    {
+        SDL_HideWindow(window);
     }
 }
