@@ -40,7 +40,8 @@ bool MenuWindow::Create()
 void MenuWindow::renderMenu(SDL_Window* menuWindow)
 {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-    int w, h;
+    int w = 0;
+    int h = 0;
     SDL_GetWindowSize(menuWindow, &w, &h);
     ImGui::SetNextWindowSize(ImVec2((float)w, (float)h), ImGuiCond_Always);
 
@@ -65,6 +66,7 @@ void MenuWindow::renderMenu(SDL_Window* menuWindow)
 
     if (ImGui::CollapsingHeader("Hotkeys"))
     {
+        ImGui::Text("Show this menu: Home key");
         ImGui::Text("Kill Switch: Page Down");
         ImGui::Text("(Tab shows scoreboard overlays in game)");
     }
@@ -76,10 +78,11 @@ void MenuWindow::renderMenu(SDL_Window* menuWindow)
         ImGui::Text("Qwack - League of Legends Overlay");
     }
 
+    ImGui::Spacing();
     ImGui::Separator();
     ImGui::Spacing();
 
-    if (ImGui::Button("EndProcess"))
+    if (ImGui::Button("Close Qwack"))
     {
         ImGui::OpenPopup("Confirm Close");
     }
