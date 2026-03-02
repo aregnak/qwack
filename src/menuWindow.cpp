@@ -1,5 +1,6 @@
 #include <iostream>
 #include "menuWindow.h"
+#include "keyboard.h"
 #include "log.h"
 
 MenuWindow::MenuWindow() {}
@@ -156,5 +157,17 @@ bool MenuWindow::processEvent(const SDL_Event& event)
         QWACK_LOG("Menu hidden using close request.");
         setVisibility(false);
         return true;
+    }
+}
+
+void MenuWindow::handleVisibility()
+{
+    if (isHomeDown())
+    {
+        if (!visible)
+        {
+            QWACK_LOG("Menu shown using Home key.");
+            setVisibility(true);
+        }
     }
 }

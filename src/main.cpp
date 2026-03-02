@@ -52,6 +52,10 @@ int main(int, char**)
         return 1;
     }
 
+    // Prevent SDL from pushing SDL_EVENT_QUIT when the last visible window is closed/hidden.
+    // The app manages its own quit logic (killswitch, EndProcess button, overlay close).
+    SDL_SetHint(SDL_HINT_QUIT_ON_LAST_WINDOW_CLOSE, "0");
+
     // Get screen area without the taskbar.
     float screenWidth = 0; //workArea.right - workArea.left;
     float screenHeight = 0; //workArea.bottom - workArea.top;
@@ -199,19 +203,23 @@ int main(int, char**)
             running.store(false);
         }
 
+        menu.handleVisibility();
+
         // Render menu window
-        ImGui::SetCurrentContext(menuCtx);
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplSDL3_NewFrame();
-        ImGui::NewFrame();
+        if (menu.isVisible())
+        {
+            ImGui::SetCurrentContext(menuCtx);
+            ImGui_ImplDX11_NewFrame();
+            ImGui_ImplSDL3_NewFrame();
+            ImGui::NewFrame();
 
-        menu.renderMenu(menuWindow);
+            menu.renderMenu(menuWindow);
 
-        ImGui::Render();
-        menu.BeginFrame();
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        menu.EndFrame();
-
+            ImGui::Render();
+            menu.BeginFrame();
+            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+            menu.EndFrame();
+        }
         // Check if League is focused, set visible.
         overlay.handleWindowVisibility(gameState.load());
 

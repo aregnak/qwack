@@ -19,6 +19,8 @@ public:
 
     bool processEvent(const SDL_Event& event);
 
+    void handleVisibility();
+
     struct Elements
     {
         bool showCspm = true;
