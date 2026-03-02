@@ -49,16 +49,12 @@ void MenuWindow::renderMenu(SDL_Window* menuWindow)
     ImGui::Separator();
     ImGui::Spacing();
 
-    // ! Placeholder, just for testing.
-    static bool x = false;
-    static bool y = false;
-    static bool z = true;
     // Overlay toggles
     if (ImGui::CollapsingHeader("Overlays", ImGuiTreeNodeFlags_DefaultOpen))
     {
-        ImGui::Checkbox("Show CS/min Overlay", &x);
-        ImGui::Checkbox("Show Rank Overlay", &y);
-        ImGui::Checkbox("Show Item Gold Diff Overlay", &z);
+        ImGui::Checkbox("Show CS/min Overlay", &elements.showCspm);
+        ImGui::Checkbox("Show Rank Overlay", &elements.showRanks);
+        ImGui::Checkbox("Show Item Gold Diff Overlay", &elements.showGoldDiff);
         ImGui::Spacing();
     }
 

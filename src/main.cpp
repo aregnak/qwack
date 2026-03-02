@@ -218,7 +218,7 @@ int main(int, char**)
         // Check if League is focused, set visible.
         overlay.handleWindowVisibility(gameState.load());
 
-        // Focus checking and key checking.
+        // In game logic.
         if (gameState.load() == gameState::INGAME)
         {
             if (!gotRanks && gp.isRanksReady())
@@ -239,8 +239,7 @@ int main(int, char**)
 
             // Overlays are down here.
             // CS/Min overlay
-
-            if (overlay.isVisible())
+            if (menu.elements.showCspm && overlay.isVisible())
             {
                 overlay.renderCspm(csPerMin.load());
             }
@@ -251,8 +250,14 @@ int main(int, char**)
             {
                 if (overlay.isVisible() && IsTabDown())
                 {
-                    overlay.renderRanks(renderRanks);
-                    overlay.renderGoldDiff(itemGoldDiff);
+                    if (menu.elements.showRanks)
+                    {
+                        overlay.renderRanks(renderRanks);
+                    }
+                    if (menu.elements.showGoldDiff)
+                    {
+                        overlay.renderGoldDiff(itemGoldDiff);
+                    }
                 }
             }
 
