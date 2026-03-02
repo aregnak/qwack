@@ -165,7 +165,6 @@ int main(int, char**)
     // Main thread.
     SDL_Event event;
     bool gotRanks = false;
-    HWND leagueHwnd = nullptr;
 
     std::vector<int> itemGoldDiff;
 
@@ -216,13 +215,12 @@ int main(int, char**)
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
         menu.EndFrame();
 
+        // Check if League is focused, set visible.
+        overlay.handleWindowVisibility(gameState.load());
+
         // Focus checking and key checking.
         if (gameState.load() == gameState::INGAME)
         {
-            // Cache League window handle once per game session.
-            if (!leagueHwnd)
-                leagueHwnd = findLeagueWindow();
-
             if (!gotRanks && gp.isRanksReady())
             {
                 renderRanks = gp.getRanks();
@@ -238,9 +236,6 @@ int main(int, char**)
             ImGui_ImplDX11_NewFrame();
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
-
-            // Overlay decides its own visibility (in-game + League focused).
-            overlay.handleWindowVisibility(gameState.load(), leagueHwnd);
 
             // Overlays are down here.
             // CS/Min overlay
@@ -272,12 +267,6 @@ int main(int, char**)
             {
                 gotRanks = false;
             }
-
-            // Game ended — reset cached handle & hide overlay.
-            if (leagueHwnd)
-                leagueHwnd = nullptr;
-
-            overlay.handleWindowVisibility(gameState.load(), nullptr);
         }
 
         // Limit to 30 fps.

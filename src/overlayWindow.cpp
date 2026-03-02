@@ -142,39 +142,42 @@ void OverlayWindow::renderGoldDiff(std::vector<int> itemGoldDiff)
     }
 }
 
-bool OverlayWindow::handleWindowVisibility(gameState state, HWND leagueHwnd)
+bool OverlayWindow::handleWindowVisibility(gameState gs)
 {
-    const bool shouldShow = (state == gameState::INGAME) && isLeagueFocused(leagueHwnd);
-
-    if (shouldShow && !_visible)
+    if (gs == gameState::INGAME && isLeagueFocused())
     {
-        SDL_ShowWindow(window);
-        _visible = true;
-    }
-    else if (!shouldShow && _visible)
-    {
-        SDL_HideWindow(window);
-        _visible = false;
-    }
-
-    return _visible;
-}
-
-bool OverlayWindow::isVisible() const
-{
-    return _visible;
-}
-
-void OverlayWindow::setVisibility(bool state)
-{
-    _visible = state;
-
-    if (_visible)
-    {
-        SDL_ShowWindow(window);
+        setVisibility(true);
     }
     else
     {
-        SDL_HideWindow(window);
+        setVisibility(false);
+    }
+
+    return _visible;
+}
+
+const bool OverlayWindow::isVisible()
+{
+    return _visible;
+    //
+}
+
+void OverlayWindow::setVisibility(const bool state)
+{
+    if (state)
+    {
+        if (!_visible)
+        {
+            SDL_ShowWindow(window);
+            _visible = state;
+        }
+    }
+    else
+    {
+        if (_visible)
+        {
+            SDL_HideWindow(window);
+            _visible = state;
+        }
     }
 }
