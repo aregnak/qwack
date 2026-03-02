@@ -99,6 +99,8 @@ int main(int, char**)
     menuWindow.Create();
     SDL_Window* menu = menuWindow.getWindow();
 
+    // !!!!!
+    // TODO: Right now, there is a device and device context for each window. Merge them together.
     // ImGui overlay window context
     ImGuiContext* overlayCtx = ImGui::CreateContext();
     ImGui::SetCurrentContext(overlayCtx);

@@ -38,6 +38,7 @@ add_executable(qwack
     src/gamePoller.cpp
     src/window.cpp
     src/overlayWindow.cpp
+    src/menuWindow.cpp
 
     libs/imgui/imgui.cpp
     libs/imgui/imgui_draw.cpp
