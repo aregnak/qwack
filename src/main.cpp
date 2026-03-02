@@ -38,6 +38,7 @@
 // DX11 & SDL window
 #include "window.h"
 #include "overlayWindow.h"
+#include "menuWindow.h"
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
@@ -92,18 +93,26 @@ int main(int, char**)
 
     OverlayWindow overlayWindow(screenWidth, screenHeight);
     overlayWindow.Create();
+    SDL_Window* overlay = overlayWindow.getWindow();
 
-    // ImGui setup
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
-    (void)io;
+    MenuWindow menuWindow;
+    menuWindow.Create();
+    SDL_Window* menu = menuWindow.getWindow();
+
+    // ImGui overlay window context
+    ImGuiContext* overlayCtx = ImGui::CreateContext();
+    ImGui::SetCurrentContext(overlayCtx);
+    ImGui_ImplSDL3_InitForD3D(overlay);
+    ImGui_ImplDX11_Init(overlayWindow.g_pd3dDevice, overlayWindow.g_pd3dDeviceContext);
     ImGui::StyleColorsDark();
 
-    SDL_Window* window = overlayWindow.getWindow();
+    // Menu context
+    ImGuiContext* menuCtx = ImGui::CreateContext();
+    ImGui::SetCurrentContext(menuCtx);
+    ImGui_ImplSDL3_InitForD3D(menu);
+    ImGui_ImplDX11_Init(menuWindow.g_pd3dDevice, menuWindow.g_pd3dDeviceContext);
+    ImGui::StyleColorsDark();
 
-    ImGui_ImplSDL3_InitForD3D(window);
-    ImGui_ImplDX11_Init(overlayWindow.g_pd3dDevice, overlayWindow.g_pd3dDeviceContext);
     // Finish all DX11, SDL, and ImGui setup.
 
     // Friendly welcome message!
@@ -227,13 +236,22 @@ int main(int, char**)
     {
         while (SDL_PollEvent(&event))
         {
+            ImGui::SetCurrentContext(menuCtx);
             ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
             {
                 running.store(false);
             }
             if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
-                event.window.windowID == SDL_GetWindowID(window))
+                event.window.windowID == SDL_GetWindowID(menu))
+            {
+                running.store(false);
+            }
+
+            ImGui::SetCurrentContext(overlayCtx);
+            ImGui_ImplSDL3_ProcessEvent(&event);
+            if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
+                event.window.windowID == SDL_GetWindowID(overlay))
             {
                 running.store(false);
             }
@@ -245,23 +263,61 @@ int main(int, char**)
             QWACK_LOG("Killswitch activated. Exiting.");
             running.store(false);
         }
-
-        // Start ImGui frame
+        ImGui::SetCurrentContext(menuCtx);
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplSDL3_NewFrame();
         ImGui::NewFrame();
 
-        // TODO: Main settings overlay
+        // Menu window
         {
-            // ImGui::SetNextWindowBgAlpha(0.4f);
-            // ImGui::SetNextWindowPos(ImVec2(screenWidth / 2, screenHeight / 2), ImGuiCond_Always);
-            // ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_Always);
+            ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
+            int w, h;
+            SDL_GetWindowSize(menu, &w, &h);
+            ImGui::SetNextWindowSize(ImVec2((float)w, (float)h), ImGuiCond_Always);
 
-            // ImGui::Begin("Test", nullptr);
+            ImGui::Begin("Settings", nullptr,
+                         ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                             ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 
-            // ImGui::Text("Hello from another window!");
-            // ImGui::End();
+            ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "Qwack Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            // ! Placeholder, just for testing.
+            static bool x = false;
+            static bool y = false;
+            static bool z = true;
+            // Overlay toggles
+            if (ImGui::CollapsingHeader("Overlays", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Checkbox("Show CS/min Overlay", &x);
+                ImGui::Checkbox("Show Rank Overlay", &y);
+                ImGui::Checkbox("Show Item Gold Diff Overlay", &z);
+                ImGui::Spacing();
+            }
+
+            ImGui::Spacing();
+
+            if (ImGui::CollapsingHeader("Hotkeys"))
+            {
+                ImGui::Text("Kill Switch: Page Down");
+                ImGui::Text("(Tab shows scoreboard overlays in game)");
+            }
+
+            ImGui::Spacing();
+
+            if (ImGui::CollapsingHeader("About"))
+            {
+                ImGui::Text("Qwack - League of Legends Overlay");
+            }
+
+            ImGui::End();
         }
+
+        ImGui::Render();
+        menuWindow.BeginFrame();
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+        menuWindow.EndFrame();
 
         // Focus checking and key checking.
         if (gameState.load() == gameState::INGAME)
@@ -281,7 +337,7 @@ int main(int, char**)
             {
                 if (windowHidden)
                 {
-                    SDL_ShowWindow(window);
+                    SDL_ShowWindow(overlay);
                     windowHidden = false;
                 }
             }
@@ -289,7 +345,7 @@ int main(int, char**)
             {
                 if (!windowHidden)
                 {
-                    SDL_HideWindow(window);
+                    SDL_HideWindow(overlay);
                     windowHidden = true;
                 }
             }
@@ -306,6 +362,11 @@ int main(int, char**)
                     tabDown = false;
                 }
             }
+
+            ImGui::SetCurrentContext(overlayCtx);
+            ImGui_ImplDX11_NewFrame();
+            ImGui_ImplSDL3_NewFrame();
+            ImGui::NewFrame();
 
             // Overlays are down here.
             // CS/Min overlay
@@ -366,6 +427,11 @@ int main(int, char**)
                     num++;
                 }
             }
+
+            ImGui::Render();
+            overlayWindow.BeginFrame();
+            ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+            overlayWindow.EndFrame();
         }
         else
         {
@@ -374,12 +440,6 @@ int main(int, char**)
                 gotRanks = false;
             }
         }
-
-        // Render
-        ImGui::Render();
-        overlayWindow.BeginFrame();
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-        overlayWindow.EndFrame();
 
         // Limit to 30 fps.
         SDL_Delay(33);
@@ -393,12 +453,22 @@ int main(int, char**)
         lcuThread.join();
     }
 
+    overlayWindow.Cleanup();
+    SDL_DestroyWindow(overlay);
+
+    ImGui::SetCurrentContext(overlayCtx);
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplSDL3_Shutdown();
-    ImGui::DestroyContext();
+    ImGui::DestroyContext(overlayCtx);
 
-    overlayWindow.Cleanup();
-    SDL_DestroyWindow(window);
+    menuWindow.Cleanup();
+    SDL_DestroyWindow(menu);
+
+    ImGui::SetCurrentContext(menuCtx);
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplSDL3_Shutdown();
+    ImGui::DestroyContext(menuCtx);
+
     SDL_Quit();
 
     return 0;

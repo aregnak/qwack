@@ -27,6 +27,8 @@ bool OverlayWindow::Create()
         return false;
     }
 
+    windowID = SDL_GetWindowID(window);
+
     SDL_PropertiesID props = SDL_GetWindowProperties(window);
     HWND hwnd = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 
