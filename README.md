@@ -9,6 +9,7 @@ A simple League of Legends companion app capable of displaying in game statistic
 - CS/min display
 - Current season player ranks
 - Item gold diff per lane
+- Settings menu to toggle any overlay
 - More to come soon!
 
 ### External Dependencies
