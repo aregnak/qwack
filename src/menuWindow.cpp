@@ -8,9 +8,7 @@ bool MenuWindow::Create()
 {
     QWACK_LOG("Initializing Menu Window.");
 
-    SDL_WindowFlags flags = (SDL_WindowFlags)(SDL_WINDOW_RESIZABLE);
-
-    window = SDL_CreateWindow("Qwack", 600, 450, flags);
+    window = SDL_CreateWindow("Qwack", 600, 450, 0);
 
     if (!window)
     {
