@@ -174,17 +174,14 @@ int main(int, char**)
     {
         while (SDL_PollEvent(&event))
         {
-            ImGui::SetCurrentContext(menuCtx);
-            ImGui_ImplSDL3_ProcessEvent(&event);
             if (event.type == SDL_EVENT_QUIT)
             {
                 running.store(false);
             }
-            if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
-                event.window.windowID == SDL_GetWindowID(menuWindow))
-            {
-                running.store(false);
-            }
+
+            ImGui::SetCurrentContext(menuCtx);
+            ImGui_ImplSDL3_ProcessEvent(&event);
+            menu.processEvent(event);
 
             ImGui::SetCurrentContext(overlayCtx);
             ImGui_ImplSDL3_ProcessEvent(&event);

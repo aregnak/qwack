@@ -17,6 +17,8 @@ public:
     bool Create() override;
     void renderMenu(SDL_Window* menuWindow);
 
+    bool processEvent(const SDL_Event& event);
+
     struct Elements
     {
         bool showCspm = true;
@@ -25,6 +27,4 @@ public:
     };
 
     Elements elements;
-
-private:
 };

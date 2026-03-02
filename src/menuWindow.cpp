@@ -31,6 +31,8 @@ bool MenuWindow::Create()
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
     QWACK_LOG("Menu Window Finished Initializing.");
+
+    visible = true;
     return true;
 }
 
@@ -73,5 +75,86 @@ void MenuWindow::renderMenu(SDL_Window* menuWindow)
         ImGui::Text("Qwack - League of Legends Overlay");
     }
 
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    if (ImGui::Button("EndProcess"))
+    {
+        ImGui::OpenPopup("Confirm Close");
+    }
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+
+    if (ImGui::BeginPopupModal("Confirm Close", NULL, flags))
+    {
+        ImGui::Text("Are you sure you want to close?");
+        ImGui::Separator();
+
+        if (ImGui::Button("Yes", ImVec2(120, 0)))
+        {
+            QWACK_LOG("Program terminated through menu close.");
+
+            SDL_Event event;
+            event.type = SDL_EVENT_QUIT;
+            SDL_PushEvent(&event);
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("No", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
     ImGui::End();
+}
+
+bool MenuWindow::processEvent(const SDL_Event& event)
+{
+    // Only handle events for this window.
+    bool isOurs = false;
+    switch (event.type)
+    {
+        case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+        case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_FOCUS_GAINED:
+        case SDL_EVENT_WINDOW_FOCUS_LOST:
+        case SDL_EVENT_WINDOW_EXPOSED:
+            isOurs = (event.window.windowID == windowID);
+            break;
+
+        case SDL_EVENT_MOUSE_MOTION:
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP:
+        case SDL_EVENT_MOUSE_WHEEL:
+            isOurs = (event.motion.windowID == windowID);
+            break;
+
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP:
+            isOurs = (event.key.windowID == windowID);
+            break;
+
+        case SDL_EVENT_TEXT_INPUT:
+            isOurs = (event.text.windowID == windowID);
+            break;
+
+        default:
+            return false;
+    }
+
+    if (!isOurs)
+        return false;
+
+    // Handle window close -> hide instead of quitting the app.
+    if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED && event.window.windowID == windowID)
+    {
+        QWACK_LOG("Menu hidden using close request.");
+        setVisibility(false);
+        return true;
+    }
 }

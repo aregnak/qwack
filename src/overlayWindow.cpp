@@ -153,31 +153,5 @@ bool OverlayWindow::handleWindowVisibility(gameState gs)
         setVisibility(false);
     }
 
-    return _visible;
-}
-
-const bool OverlayWindow::isVisible()
-{
-    return _visible;
-    //
-}
-
-void OverlayWindow::setVisibility(const bool state)
-{
-    if (state)
-    {
-        if (!_visible)
-        {
-            SDL_ShowWindow(window);
-            _visible = state;
-        }
-    }
-    else
-    {
-        if (_visible)
-        {
-            SDL_HideWindow(window);
-            _visible = state;
-        }
-    }
+    return visible;
 }

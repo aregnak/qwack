@@ -50,6 +50,28 @@ SDL_Window* Window::getWindow()
     //
 }
 
+const bool Window::isVisible() { return visible; }
+
+void Window::setVisibility(const bool state)
+{
+    if (state)
+    {
+        if (!visible)
+        {
+            SDL_ShowWindow(window);
+            visible = state;
+        }
+    }
+    else
+    {
+        if (visible)
+        {
+            SDL_HideWindow(window);
+            visible = state;
+        }
+    }
+}
+
 // Protected members.
 void Window::CreateRenderTarget()
 {

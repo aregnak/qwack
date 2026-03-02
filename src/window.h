@@ -29,9 +29,14 @@ public:
 
     SDL_Window* getWindow();
 
+    const bool isVisible();
+    void setVisibility(const bool state);
+
 protected:
     SDL_Window* window = nullptr;
     SDL_WindowID windowID = 0;
+
+    bool visible = false;
 
     IDXGISwapChain* g_pSwapChain = nullptr;
     ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
