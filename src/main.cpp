@@ -121,9 +121,6 @@ int main(int, char**)
     QWACK_LOG("Thank you for choosing (or being forced to) try my program, Enjoy!");
 
     // CS/min screen. Dynamic placement, but only tested on 1920x1200.
-    ImVec2 cspmSize = ImVec2(120, 30);
-    ImVec2 cspmPos = ImVec2((screenWidth - (cspmSize.x * 1.2)), screenHeight / 2.5);
-    QWACK_LOG("CS/Min overlay pos: " << cspmPos.x << " " << cspmPos.y);
 
     ImVec2 rankSize = ImVec2(30, 30);
     std::vector<ImVec2> rankPoss(10);
@@ -374,24 +371,7 @@ int main(int, char**)
             // CS/Min overlay
             if (!windowHidden)
             {
-                ImGui::SetNextWindowBgAlpha(0.4f);
-                ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
-                ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
-
-                ImGui::Begin("cspm", nullptr,
-                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                                 ImGuiWindowFlags_NoFocusOnAppearing);
-
-                if (csPerMin.load() < 0.0f)
-                {
-                    ImGui::Text("Waiting for game.");
-                }
-                else
-                {
-                    ImGui::Text("CS/min: %.2f", csPerMin.load());
-                }
-                ImGui::End();
+                overlayWindow.renderCspm(csPerMin.load());
             }
 
             // Ranks & item gold diff overlay

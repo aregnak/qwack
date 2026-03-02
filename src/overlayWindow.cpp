@@ -2,14 +2,14 @@
 #include "overlayWindow.h"
 #include "log.h"
 
-#include "imgui.h"
-#include "imgui_impl_sdl3.h"
-#include "imgui_impl_dx11.h"
-
 OverlayWindow::OverlayWindow(float screenWidth, float screenHeight)
     : _screenWidth(screenWidth)
     , _screenHeight(screenHeight)
 {
+    cspmSize = ImVec2(120, 30);
+    cspmPos = ImVec2((screenWidth - (cspmSize.x * 1.2)), screenHeight / 2.5);
+
+    QWACK_LOG("CS/Min overlay pos: " << cspmPos.x << " " << cspmPos.y);
 }
 
 bool OverlayWindow::Create()
@@ -48,4 +48,25 @@ bool OverlayWindow::Create()
 
     QWACK_LOG("Overlay Window Finished Initializing.");
     return true;
+}
+
+void OverlayWindow::renderCspm(float cspm)
+{
+    ImGui::SetNextWindowBgAlpha(0.4f);
+    ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
+
+    ImGui::Begin("cspm", nullptr,
+                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                     ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing);
+
+    if (cspm < 0.0f)
+    {
+        ImGui::Text("Waiting for game.");
+    }
+    else
+    {
+        ImGui::Text("CS/min: %.2f", cspm);
+    }
+    ImGui::End();
 }
