@@ -2,6 +2,7 @@
 #include "menuWindow.h"
 #include "keyboard.h"
 #include "log.h"
+#include "version.h"
 
 MenuWindow::MenuWindow() {}
 
@@ -76,6 +77,7 @@ void MenuWindow::renderMenu(SDL_Window* menuWindow)
     if (ImGui::CollapsingHeader("About"))
     {
         ImGui::Text("Qwack - League of Legends Overlay");
+        ImGui::Text("Version %s", APP_VERSION_STRING);
     }
 
     ImGui::Spacing();

@@ -1,8 +1,18 @@
 cmake_minimum_required(VERSION 3.21)
-project(qwack)
+
+project(qwack VERSION 0.0.2)
+
+# For consistent version
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/version.h
+)
+
+
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 
 # Portable Windows build settings
 option(PORTABLE "Link MSVC runtime statically for portable Windows binaries" OFF)
@@ -50,6 +60,7 @@ add_executable(qwack
 
 # Header libs
 target_include_directories(qwack PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/generated
     libs/imgui
     libs/httplib
     libs/json
