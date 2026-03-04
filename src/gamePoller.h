@@ -38,7 +38,6 @@ public:
     std::vector<int> getItemGoldDiff();
 
 private:
-    void connectToLCU(LCUInfo& lcu);
     void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC);
     void getSessionPlayers(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);
 

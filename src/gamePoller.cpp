@@ -1,6 +1,7 @@
 #include "gamePoller.h"
 #include "game.h"
 #include "lcuClient.h"
+#include "parser.h"
 #include "playerInfo.h"
 #include "log.h"
 #include "poll.h"
@@ -25,7 +26,7 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
     {
         LCUInfo lcu;
 
-        connectToLCU(lcu);
+        lcu = parseLockfile();
 
         while (running.load() && lcu.port == 0)
         {
@@ -39,7 +40,7 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
 
             if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 10)
             {
-                connectToLCU(lcu);
+                lcu = parseLockfile();
                 _lastPoll = _now;
             }
         }
@@ -193,8 +194,6 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
         gameState.store(gameState::LOBBY);
     }
 }
-
-void GamePoller::connectToLCU(LCUInfo& lcu) { lcu = parseLockfile(); }
 
 void GamePoller::getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC)
 {
