@@ -3,6 +3,7 @@
 #include "lcuClient.h"
 #include "playerInfo.h"
 #include "log.h"
+#include "poll.h"
 #include <chrono>
 #include <string>
 #include <wingdi.h>
@@ -24,6 +25,8 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
     {
         LCUInfo lcu;
 
+        connectToLCU(lcu);
+
         while (running.load() && lcu.port == 0)
         {
             if (!_printedWaitingForClient)
@@ -32,7 +35,13 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
                 _printedWaitingForClient = true;
             }
 
-            connectToLCU(lcu);
+            _now = std::chrono::steady_clock::now();
+
+            if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 10)
+            {
+                connectToLCU(lcu);
+                _lastPoll = _now;
+            }
         }
 
         lcuC.connect(lcu);
@@ -40,7 +49,12 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
         // Get player name
         while (running.load() && _playerName.empty())
         {
-            getPlayerName(gameState, lcuC);
+            _now = std::chrono::steady_clock::now();
+
+            if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 5)
+            {
+                getPlayerName(gameState, lcuC);
+            }
         }
 
         // Maybe this is poor design, but the while loops will be exitted
@@ -180,25 +194,13 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
     }
 }
 
-void GamePoller::connectToLCU(LCUInfo& lcu)
-{
-    lcu = parseLockfile();
-
-    if (lcu.port == 0)
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-    }
-}
+void GamePoller::connectToLCU(LCUInfo& lcu) { lcu = parseLockfile(); }
 
 void GamePoller::getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC)
 {
     _playerName = _poller.getCurrentSummoner(lcuC);
 
-    if (_playerName.empty())
-    {
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-    }
-    else
+    if (!_playerName.empty())
     {
         gameState.store(gameState::LOBBY);
         QWACK_LOG("Summoner found: " << _playerName);
