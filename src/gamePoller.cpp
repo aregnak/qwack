@@ -7,6 +7,7 @@
 #include "poll.h"
 #include <chrono>
 #include <string>
+#include <thread>
 #include <wingdi.h>
 
 GamePoller::GamePoller()
@@ -43,6 +44,8 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
                 lcu = parseLockfile();
                 _lastPoll = _now;
             }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
 
         lcuC.connect(lcu);
@@ -56,6 +59,8 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
             {
                 getPlayerName(gameState, lcuC);
             }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
 
         // Maybe this is poor design, but the while loops will be exitted
