@@ -58,6 +58,14 @@ add_executable(qwack
     libs/imgui/imgui_impl_dx11.cpp
 )
 
+if (MSVC)
+    target_link_options(qwack PRIVATE 
+        $<$<CONFIG:Release>:/SUBSYSTEM:WINDOWS>
+        $<$<CONFIG:Debug>:/SUBSYSTEM:CONSOLE>
+    )
+endif()
+
+
 # Header libs
 target_include_directories(qwack PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR}/generated

@@ -311,3 +311,5 @@ int main(int, char**)
 
     return 0;
 }
+
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(__argc, __argv); }
