@@ -5,19 +5,11 @@
 #include <windows.h>
 #include <winuser.h>
 #include <d3d11.h>
-#include <iostream>
-#include <string>
 #include <chrono>
-#include <algorithm>
-#include <future>
 #include <atomic>
-#include <filesystem>
-#include <mutex>
 #include <thread>
-// #include <dxgi1_2.h>
 
 #include <SDL.h>
-// #include <SDL_syswm.h>
 
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
@@ -29,14 +21,10 @@
 #include "log.h"
 #include "game.h"
 #include "gamePoller.h"
-#include "poll.h"
-#include "parser.h"
 #include "lcuClient.h"
-#include "playerInfo.h"
 #include "keyboard.h"
 
-// DX11 & SDL window
-#include "window.h"
+// SDL window headers
 #include "overlayWindow.h"
 #include "menuWindow.h"
 
@@ -72,10 +60,6 @@ int main(int, char**)
     overlay.Create();
     SDL_Window* overlayWindow = overlay.getWindow();
 
-    MenuWindow menu;
-    menu.Create();
-    SDL_Window* menuWindow = menu.getWindow();
-
     // !!!!!
     // TODO: Right now, there is a device and device context for each window. Merge them together.
     // ImGui overlay window context
@@ -85,6 +69,11 @@ int main(int, char**)
     ImGui_ImplDX11_Init(overlay.g_pd3dDevice, overlay.g_pd3dDeviceContext);
     ImGui::StyleColorsDark();
 
+    // Menu window creation
+    MenuWindow menu;
+    menu.Create();
+    SDL_Window* menuWindow = menu.getWindow();
+
     // Menu context
     ImGuiContext* menuCtx = ImGui::CreateContext();
     ImGui::SetCurrentContext(menuCtx);
@@ -92,7 +81,9 @@ int main(int, char**)
     ImGui_ImplDX11_Init(menu.g_pd3dDevice, menu.g_pd3dDeviceContext);
     ImGui::StyleColorsDark();
 
+    // --------------------------------------
     // Finish all DX11, SDL, and ImGui setup.
+    // --------------------------------------
 
     // Friendly welcome message!
     QWACK_LOG("Thank you for choosing (or being forced to) try my program, Enjoy!");
@@ -105,14 +96,13 @@ int main(int, char**)
     // Initial game state of closed (league not open).
     std::atomic<gameState> gameState = gameState::CLOSED;
 
+    // gp is used in both lcuThread and the main thread, mutex and atomic variables are in the class members.
     GamePoller gp;
 
     // Polling thread.
     std::thread lcuThread(
         [&]()
         {
-            auto lastPoll = std::chrono::steady_clock::now();
-
             LCUClient lcuC;
 
             try
@@ -125,13 +115,12 @@ int main(int, char**)
                         {
                             gameState.store(gameState::CLOSED);
 
-                            // reset playerName & print message.
+                            // Reset playerName & print message.
                             gp.resetPlayerName();
 
                             LCU_LOG("Lockfile not found. League is closed (keep it closed pls).");
                         }
 
-                        // ! Change this name.
                         gp.setPrintedWaitingForClient(false);
                     }
 
@@ -312,4 +301,5 @@ int main(int, char**)
     return 0;
 }
 
+// Entry point for WIN32 (release) build.
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(__argc, __argv); }
