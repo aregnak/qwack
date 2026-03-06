@@ -189,8 +189,8 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
         {
             player.role = j["position"];
             player.team = j["team"];
-            QWACK_LOG("POS: " << player.role);
-            QWACK_LOG("TEAM: " << player.team);
+            // QWACK_LOG("POS: " << player.role);
+            // QWACK_LOG("TEAM: " << player.team);
             break;
         }
     }

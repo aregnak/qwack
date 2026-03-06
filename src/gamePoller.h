@@ -39,7 +39,7 @@ public:
 
 private:
     void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC);
-    void getSessionPlayers(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);
+    void getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);
 
     void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold);
 

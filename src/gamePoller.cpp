@@ -95,7 +95,7 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameS
 
             if (!practicetool.load())
             {
-                getSessionPlayers(newPlayers, lcuC);
+                getAllPlayersInfo(newPlayers, lcuC);
             }
             _playersLoaded = true;
 
@@ -211,7 +211,7 @@ void GamePoller::getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcu
     }
 }
 
-void GamePoller::getSessionPlayers(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC)
+void GamePoller::getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC)
 {
     // Unfortunately my understanding of the LCU API led me here,
     // to get players' ranks, we need the puuid, but to get their in game
@@ -224,8 +224,8 @@ void GamePoller::getSessionPlayers(std::vector<PlayerInfo>& newPlayers, LCUClien
 
         p.champ = _poller.getChampionNameById(p.champID);
         _poller.getPlayerRoleAndTeam(p);
-        std::cout << "riotID: " << p.riotID << " rank: " << p.rank << " role: " << p.role
-                  << " team: " << p.team << std::endl;
+        // LCU_LOG("riotID: " << p.riotID << " rank: " << p.rank << " role: " << p.role
+        //                    << " team: " << p.team);
     }
 
     sortPlayers(newPlayers);
@@ -254,8 +254,8 @@ void GamePoller::getSessionPlayers(std::vector<PlayerInfo>& newPlayers, LCUClien
             _ranks.push_back("");
         }
 
-        std::cout << "puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
-                  << " role: " << p.role << " team: " << p.team << std::endl;
+        LCU_LOG("puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
+                          << " role: " << p.role << " team: " << p.team);
     }
 
     _ranksReady.store(true);
