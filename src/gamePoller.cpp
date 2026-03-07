@@ -51,6 +51,9 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
         lcuC.connect(lcu);
 
         // Get player name
+        getPlayerName(gameState, lcuC);
+
+        // Keep checking for name every 5 seconds.
         while (running.load() && _playerName.empty())
         {
             _now = std::chrono::steady_clock::now();
@@ -78,45 +81,50 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameS
         _inLobby = true;
     }
 
-    if (_poller.update())
+    _now = std::chrono::steady_clock::now();
+
+    if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 5)
     {
-        if (!_playersLoaded)
+        if (_poller.update())
         {
-            std::vector<PlayerInfo> newPlayers(10);
-            LCU_LOG("Polling Player Info...");
-
-            _poller.getSessionInfo(lcuC, newPlayers);
-
-            if (newPlayers.empty())
+            if (!_playersLoaded)
             {
-                practicetool.store(true);
-                QWACK_LOG("Gamemode is practice tool, skipping player info");
+                std::vector<PlayerInfo> newPlayers(10);
+                LCU_LOG("Polling Player Info...");
+
+                _poller.getSessionInfo(lcuC, newPlayers);
+
+                if (newPlayers.empty())
+                {
+                    practicetool.store(true);
+                    QWACK_LOG("Gamemode is practice tool, skipping player info");
+                }
+
+                if (!practicetool.load())
+                {
+                    getAllPlayersInfo(newPlayers, lcuC);
+                }
+                _playersLoaded = true;
+
+                _players = std::move(newPlayers);
             }
 
-            if (!practicetool.load())
+            // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
+            // This makes the INGAME state really mean loaded into the game, not just loading screen.
+            if (_poller.getGameTime() > 0.5f)
             {
-                getAllPlayersInfo(newPlayers, lcuC);
+                gameState.store(gameState::INGAME);
             }
-            _playersLoaded = true;
-
-            _players = std::move(newPlayers);
-        }
-
-        // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
-        // This makes the INGAME state really mean loaded into the game, not just loading screen.
-        if (_poller.getGameTime() > 0.5f)
-        {
-            gameState.store(gameState::INGAME);
         }
     }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
 void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin,
                                    std::atomic<gameState>& gameState,
                                    std::atomic<bool>& practicetool)
 {
-    static int currentCS = 0;
-
     if (_inLobby)
     {
         _inLobby = false;
@@ -125,11 +133,11 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
 
     if (_poller.update())
     {
-        currentCS = _poller.getcs(_playerName);
+        _currentCS = _poller.getcs(_playerName);
         float gold = _poller.getGold();
         float time = _poller.getGameTime();
 
-        getCSPM(csPerMin, currentCS, time, gold);
+        getCSPM(csPerMin, _currentCS, time, gold);
 
         // Item price polling
         if (!practicetool)
@@ -264,38 +272,33 @@ void GamePoller::getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClien
 
 void GamePoller::getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold)
 {
-    static int lastCS = 0;
-    static int estimatedCS = 0;
-    static int totalCS = 0;
-    static float lastGold = 0.0f;
-
     if (time >= 30.0f)
     {
         // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
-        if (lastCS == currentCS)
+        if (_lastCS == currentCS)
         {
-            if (gold - lastGold > 14.0f)
+            if (gold - _lastGold > 14.0f)
             {
-                estimatedCS++;
+                _estimatedCS++;
             }
             // Get gold difference twice per second, we only want the delta IF there is a change of 14 or higher during poll.
-            lastGold = gold;
+            _lastGold = gold;
         }
         else
         {
-            lastCS = currentCS;
-            estimatedCS = 0;
+            _lastCS = currentCS;
+            _estimatedCS = 0;
         }
 
-        totalCS = estimatedCS + currentCS;
+        _totalCS = _estimatedCS + currentCS;
 
         // This is really just to make it a slight bit more accurate in case
         // something triggers a lot of additional "cs" but in reality it is something else.
-        if (totalCS - currentCS > 10)
+        if (_totalCS - currentCS > 10)
         {
-            estimatedCS--;
+            _estimatedCS--;
         }
-        csPerMin.store(totalCS / (time / 60.0f), std::memory_order_relaxed);
+        csPerMin.store(_totalCS / (time / 60.0f), std::memory_order_relaxed);
     }
 }
 
@@ -304,8 +307,15 @@ void GamePoller::resetInGameCache(std::atomic<bool>& practicetool, std::atomic<f
     _ranks.clear();
     _ranksReady.store(false);
 
+    // Clear and resize to 10.
     _players = std::vector<PlayerInfo>(10);
     _playersLoaded = false;
+
+    _currentCS = 0;
+    _lastCS = 0;
+    _estimatedCS = 0;
+    _totalCS = 0;
+    _lastGold = 0.0f;
 
     practicetool.store(false);
     csPerMin.store(0.0f);

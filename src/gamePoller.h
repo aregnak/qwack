@@ -49,6 +49,12 @@ private:
     bool _inLobby = false;
     bool _printedWaitingForClient = false;
 
+    int _currentCS = 0;
+    int _lastCS = 0;
+    int _estimatedCS = 0;
+    int _totalCS = 0;
+    float _lastGold = 0.0f;
+
     std::string _playerName;
 
     poll _poller;
