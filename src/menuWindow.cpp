@@ -190,6 +190,7 @@ void MenuWindow::handleDebugTab(std::atomic<gameState>& gs)
         }
 
         ImGui::Text("State: %s", debugState);
+        ImGui::Text("Game Mode: %s", );
 
         ImGui::EndTabItem();
     }

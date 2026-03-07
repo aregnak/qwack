@@ -57,6 +57,8 @@ private:
 
     std::string _playerName;
 
+    std::string _gameMode;
+
     poll _poller;
     std::vector<PlayerInfo> _players;
     std::vector<std::string> _ranks;

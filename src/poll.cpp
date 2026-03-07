@@ -7,6 +7,8 @@
 
 using json = nlohmann::json;
 
+// This is different from MSVC Debug build, this is for static json tests.
+// TODO: Create a better way to conduct static tests.
 #define DEBUG_ENABLED false
 
 poll::poll()
@@ -86,7 +88,7 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
     return nstream.str();
 }
 
-void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
+void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players, std::string& gameMode)
 {
 #if DEBUG_ENABLED
     auto body = loadJsonFile("./session2.json");
@@ -98,7 +100,7 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players)
 
 #endif // DEBUG_ENABLED
 
-    const std::string gameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
+    gameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
     LCU_LOG("Game mode: " << gameMode);
 
     if (gameMode != "PRACTICETOOL")

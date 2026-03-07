@@ -92,7 +92,7 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameS
                 std::vector<PlayerInfo> newPlayers(10);
                 LCU_LOG("Polling Player Info...");
 
-                _poller.getSessionInfo(lcuC, newPlayers);
+                _poller.getSessionInfo(lcuC, newPlayers, _gameMode);
 
                 if (newPlayers.empty())
                 {
