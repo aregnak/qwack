@@ -1,9 +1,12 @@
 #pragma once
 
+#include <atomic>
+#include <string>
+
+#include "game.h"
 #include "window.h"
 
 #include <SDL.h>
-#include <winscard.h>
 
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
@@ -15,7 +18,7 @@ public:
     MenuWindow();
 
     bool Create() override;
-    void renderMenu(SDL_Window* menuWindow);
+    void renderMenu(SDL_Window* menuWindow, std::atomic<gameState>& gs);
 
     bool processEvent(const SDL_Event& event);
 
@@ -31,7 +34,11 @@ public:
     Elements elements;
 
 private:
-    void renderGeneralTab();
-    void renderAboutTab();
-    // void renderDebugTab();
+    void handleGeneralTab();
+    void handleDebugTab(std::atomic<gameState>& gs);
+    void handleAboutTab();
+
+    void handleClosing();
+
+    std::string _debugState;
 };

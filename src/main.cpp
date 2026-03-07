@@ -202,7 +202,7 @@ int main(int, char**)
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
 
-            menu.renderMenu(menuWindow);
+            menu.renderMenu(menuWindow, gameState);
 
             ImGui::Render();
             menu.BeginFrame();

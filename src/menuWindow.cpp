@@ -1,5 +1,6 @@
 #include <iostream>
 #include "menuWindow.h"
+#include "game.h"
 #include "keyboard.h"
 #include "log.h"
 #include "version.h"
@@ -38,7 +39,7 @@ bool MenuWindow::Create()
     return true;
 }
 
-void MenuWindow::renderMenu(SDL_Window* menuWindow)
+void MenuWindow::renderMenu(SDL_Window* menuWindow, std::atomic<gameState>& gs)
 {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     int w = 0;
@@ -56,12 +57,20 @@ void MenuWindow::renderMenu(SDL_Window* menuWindow)
 
     if (ImGui::BeginTabBar("SettingsTabs"))
     {
-        renderGeneralTab();
+        handleGeneralTab();
 
-        renderAboutTab();
+        handleDebugTab(gs);
+
+        handleAboutTab();
 
         ImGui::EndTabBar();
     }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    handleClosing();
 
     ImGui::End();
 }
@@ -125,10 +134,12 @@ void MenuWindow::handleVisibility()
 }
 
 // Private
-void MenuWindow::renderGeneralTab()
+void MenuWindow::handleGeneralTab()
 {
     if (ImGui::BeginTabItem("General"))
     {
+        ImGui::Spacing();
+
         // Overlay toggles
         if (ImGui::CollapsingHeader("Overlays", ImGuiTreeNodeFlags_DefaultOpen))
         {
@@ -147,47 +158,42 @@ void MenuWindow::renderGeneralTab()
             ImGui::Text("(Tab shows scoreboard overlays in game)");
         }
 
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
+        ImGui::EndTabItem();
+    }
+}
 
-        if (ImGui::Button("Close Qwack"))
+void MenuWindow::handleDebugTab(std::atomic<gameState>& gs)
+{
+    ImGui::Spacing();
+
+    if (ImGui::BeginTabItem("Debug"))
+    {
+        switch (gs.load())
         {
-            ImGui::OpenPopup("Confirm Close");
+            case gameState::CLOSED:
+                _debugState = "[CLOSED] Launcher closed.";
+                break;
+
+            case gameState::LOBBY:
+                _debugState = "[LOBBY] Launcher open, in lobby.";
+                break;
+
+            case gameState::INGAME:
+                _debugState = "[INGAME] In game.";
+                break;
+
+            default:
+                _debugState = "Unknown state.";
+                break;
         }
 
-        ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
-
-        if (ImGui::BeginPopupModal("Confirm Close", NULL, flags))
-        {
-            ImGui::Text("Are you sure you want to close?");
-            ImGui::Separator();
-
-            if (ImGui::Button("Yes", ImVec2(120, 0)))
-            {
-                QWACK_LOG("Program terminated through menu close.");
-
-                SDL_Event event;
-                event.type = SDL_EVENT_QUIT;
-                SDL_PushEvent(&event);
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("No", ImVec2(120, 0)))
-            {
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
-        }
+        ImGui::Text("State: %s", _debugState.c_str());
 
         ImGui::EndTabItem();
     }
 }
 
-void MenuWindow::renderAboutTab()
+void MenuWindow::handleAboutTab()
 {
     if (ImGui::BeginTabItem("About"))
     {
@@ -195,5 +201,40 @@ void MenuWindow::renderAboutTab()
         ImGui::Text("Version %s", APP_VERSION_STRING);
 
         ImGui::EndTabItem();
+    }
+}
+
+void MenuWindow::handleClosing()
+{
+    if (ImGui::Button("Close Qwack"))
+    {
+        ImGui::OpenPopup("Confirm Close");
+    }
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+
+    if (ImGui::BeginPopupModal("Confirm Close", NULL, flags))
+    {
+        ImGui::Text("Are you sure you want to close?");
+        ImGui::Separator();
+
+        if (ImGui::Button("Yes", ImVec2(120, 0)))
+        {
+            QWACK_LOG("Program terminated through menu close.");
+
+            SDL_Event event;
+            event.type = SDL_EVENT_QUIT;
+            SDL_PushEvent(&event);
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("No", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 }
