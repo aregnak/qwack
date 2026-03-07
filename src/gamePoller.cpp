@@ -85,33 +85,36 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameS
 
     if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 5)
     {
-        if (_poller.update() && !_playersLoaded)
+        if (_poller.update())
         {
-            std::vector<PlayerInfo> newPlayers(10);
-            LCU_LOG("Polling Player Info...");
-
-            _poller.getSessionInfo(lcuC, newPlayers);
-
-            if (newPlayers.empty())
+            if (!_playersLoaded)
             {
-                practicetool.store(true);
-                QWACK_LOG("Gamemode is practice tool, skipping player info");
+                std::vector<PlayerInfo> newPlayers(10);
+                LCU_LOG("Polling Player Info...");
+
+                _poller.getSessionInfo(lcuC, newPlayers);
+
+                if (newPlayers.empty())
+                {
+                    practicetool.store(true);
+                    QWACK_LOG("Gamemode is practice tool, skipping player info");
+                }
+
+                if (!practicetool.load())
+                {
+                    getAllPlayersInfo(newPlayers, lcuC);
+                }
+                _playersLoaded = true;
+
+                _players = std::move(newPlayers);
             }
 
-            if (!practicetool.load())
+            // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
+            // This makes the INGAME state really mean loaded into the game, not just loading screen.
+            if (_poller.getGameTime() > 0.5f)
             {
-                getAllPlayersInfo(newPlayers, lcuC);
+                gameState.store(gameState::INGAME);
             }
-            _playersLoaded = true;
-
-            _players = std::move(newPlayers);
-        }
-
-        // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
-        // This makes the INGAME state really mean loaded into the game, not just loading screen.
-        if (_poller.getGameTime() > 0.5f)
-        {
-            gameState.store(gameState::INGAME);
         }
     }
 
