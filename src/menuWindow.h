@@ -39,6 +39,4 @@ private:
     void handleAboutTab();
 
     void handleClosing();
-
-    std::string _debugState;
 };

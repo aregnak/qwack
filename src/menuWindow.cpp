@@ -166,28 +166,30 @@ void MenuWindow::handleDebugTab(std::atomic<gameState>& gs)
 {
     ImGui::Spacing();
 
+    const char* debugState;
+
     if (ImGui::BeginTabItem("Debug"))
     {
         switch (gs.load())
         {
             case gameState::CLOSED:
-                _debugState = "[CLOSED] Launcher closed.";
+                debugState = "[CLOSED] Launcher closed.";
                 break;
 
             case gameState::LOBBY:
-                _debugState = "[LOBBY] Launcher open, in lobby.";
+                debugState = "[LOBBY] Launcher open, in lobby.";
                 break;
 
             case gameState::INGAME:
-                _debugState = "[INGAME] In game.";
+                debugState = "[INGAME] In game.";
                 break;
 
             default:
-                _debugState = "Unknown state.";
+                debugState = "Unknown state.";
                 break;
         }
 
-        ImGui::Text("State: %s", _debugState.c_str());
+        ImGui::Text("State: %s", debugState);
 
         ImGui::EndTabItem();
     }
