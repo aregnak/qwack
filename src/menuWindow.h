@@ -29,4 +29,9 @@ public:
     };
 
     Elements elements;
+
+private:
+    void renderGeneralTab();
+    void renderAboutTab();
+    // void renderDebugTab();
 };
