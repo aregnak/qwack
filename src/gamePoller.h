@@ -37,6 +37,8 @@ public:
     const bool isItemDiffReady();
     std::vector<int> getItemGoldDiff();
 
+    const std::string getGameMode();
+
 private:
     void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC);
     void getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);

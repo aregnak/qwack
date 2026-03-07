@@ -39,7 +39,8 @@ bool MenuWindow::Create()
     return true;
 }
 
-void MenuWindow::renderMenu(SDL_Window* menuWindow, std::atomic<gameState>& gs)
+void MenuWindow::renderMenu(SDL_Window* menuWindow, std::atomic<gameState>& gs,
+                            const std::string gameMode)
 {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     int w = 0;
@@ -59,7 +60,7 @@ void MenuWindow::renderMenu(SDL_Window* menuWindow, std::atomic<gameState>& gs)
     {
         handleGeneralTab();
 
-        handleDebugTab(gs);
+        handleDebugTab(gs, gameMode);
 
         handleAboutTab();
 
@@ -162,7 +163,7 @@ void MenuWindow::handleGeneralTab()
     }
 }
 
-void MenuWindow::handleDebugTab(std::atomic<gameState>& gs)
+void MenuWindow::handleDebugTab(std::atomic<gameState>& gs, const std::string gameMode)
 {
     ImGui::Spacing();
 
@@ -190,7 +191,16 @@ void MenuWindow::handleDebugTab(std::atomic<gameState>& gs)
         }
 
         ImGui::Text("State: %s", debugState);
-        ImGui::Text("Game Mode: %s", );
+
+        // ! placeholder test code.
+        if (gameMode.empty())
+        {
+            ImGui::Text("Game Mode: Not in game");
+        }
+        else
+        {
+            ImGui::Text("Game Mode: %s", gameMode);
+        }
 
         ImGui::EndTabItem();
     }

@@ -317,6 +317,8 @@ void GamePoller::resetInGameCache(std::atomic<bool>& practicetool, std::atomic<f
     _totalCS = 0;
     _lastGold = 0.0f;
 
+    _gameMode.clear();
+
     practicetool.store(false);
     csPerMin.store(0.0f);
 
@@ -357,5 +359,11 @@ std::vector<int> GamePoller::getItemGoldDiff()
 {
     std::lock_guard<std::mutex> lock(_dataMutex);
     return _itemGoldDiff;
+    //
+}
+
+const std::string GamePoller::getGameMode()
+{
+    return _gameMode;
     //
 }
