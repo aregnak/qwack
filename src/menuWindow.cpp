@@ -54,66 +54,76 @@ void MenuWindow::renderMenu(SDL_Window* menuWindow)
     ImGui::Separator();
     ImGui::Spacing();
 
-    // Overlay toggles
-    if (ImGui::CollapsingHeader("Overlays", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::BeginTabBar("SettingsTabs"))
     {
-        ImGui::Checkbox("Show CS/min Overlay", &elements.showCspm);
-        ImGui::Checkbox("Show Rank Overlay", &elements.showRanks);
-        ImGui::Checkbox("Show Item Gold Diff Overlay", &elements.showGoldDiff);
-        ImGui::Spacing();
-    }
-
-    ImGui::Spacing();
-
-    if (ImGui::CollapsingHeader("Hotkeys"))
-    {
-        ImGui::Text("Show this menu: Home key");
-        ImGui::Text("Kill Switch: Page Down");
-        ImGui::Text("(Tab shows scoreboard overlays in game)");
-    }
-
-    ImGui::Spacing();
-
-    if (ImGui::CollapsingHeader("About"))
-    {
-        ImGui::Text("Qwack - League of Legends Overlay");
-        ImGui::Text("Version %s", APP_VERSION_STRING);
-    }
-
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Spacing();
-
-    if (ImGui::Button("Close Qwack"))
-    {
-        ImGui::OpenPopup("Confirm Close");
-    }
-
-    ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
-
-    if (ImGui::BeginPopupModal("Confirm Close", NULL, flags))
-    {
-        ImGui::Text("Are you sure you want to close?");
-        ImGui::Separator();
-
-        if (ImGui::Button("Yes", ImVec2(120, 0)))
+        if (ImGui::BeginTabItem("General"))
         {
-            QWACK_LOG("Program terminated through menu close.");
+            // Overlay toggles
+            if (ImGui::CollapsingHeader("Overlays", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::Checkbox("Show CS/min Overlay", &elements.showCspm);
+                ImGui::Checkbox("Show Rank Overlay", &elements.showRanks);
+                ImGui::Checkbox("Show Item Gold Diff Overlay", &elements.showGoldDiff);
+                ImGui::Spacing();
+            }
 
-            SDL_Event event;
-            event.type = SDL_EVENT_QUIT;
-            SDL_PushEvent(&event);
-            ImGui::CloseCurrentPopup();
+            ImGui::Spacing();
+
+            if (ImGui::CollapsingHeader("Hotkeys"))
+            {
+                ImGui::Text("Show this menu: Home key");
+                ImGui::Text("Kill Switch: Page Down");
+                ImGui::Text("(Tab shows scoreboard overlays in game)");
+            }
+
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            if (ImGui::Button("Close Qwack"))
+            {
+                ImGui::OpenPopup("Confirm Close");
+            }
+
+            ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
+
+            if (ImGui::BeginPopupModal("Confirm Close", NULL, flags))
+            {
+                ImGui::Text("Are you sure you want to close?");
+                ImGui::Separator();
+
+                if (ImGui::Button("Yes", ImVec2(120, 0)))
+                {
+                    QWACK_LOG("Program terminated through menu close.");
+
+                    SDL_Event event;
+                    event.type = SDL_EVENT_QUIT;
+                    SDL_PushEvent(&event);
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::SameLine();
+
+                if (ImGui::Button("No", ImVec2(120, 0)))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndPopup();
+            }
+
+            ImGui::EndTabItem();
         }
 
-        ImGui::SameLine();
-
-        if (ImGui::Button("No", ImVec2(120, 0)))
+        if (ImGui::BeginTabItem("About"))
         {
-            ImGui::CloseCurrentPopup();
+            ImGui::Text("Qwack - League of Legends Overlay");
+            ImGui::Text("Version %s", APP_VERSION_STRING);
+
+            ImGui::EndTabItem();
         }
 
-        ImGui::EndPopup();
+        ImGui::EndTabBar();
     }
 
     ImGui::End();
