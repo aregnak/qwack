@@ -67,7 +67,7 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
 
     if (!nres) // if res is a nullptr
     {
-        std::cout << "Failed to get name." << std::endl;
+        LCU_LOG("Failed to get Current summoner.");
         return "";
     }
 
@@ -132,7 +132,7 @@ std::string poll::getPlayerName(LCUClient& lcu, const std::string puuid)
 
     if (!nres) // if res is a nullptr
     {
-        std::cout << "Failed to get name." << std::endl;
+        LCU_LOG("Failed to get name.");
         return "";
     }
 
