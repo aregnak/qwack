@@ -24,6 +24,7 @@
 #include "gamePoller.h"
 #include "lcuClient.h"
 #include "keyboard.h"
+#include "trayHelper.h"
 
 // SDL window headers
 #include "overlayWindow.h"
@@ -31,13 +32,6 @@
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
-
-void callback_quit(void* userdata, SDL_TrayEntry* invoker)
-{
-    SDL_Event e;
-    e.type = SDL_EVENT_QUIT;
-    SDL_PushEvent(&e);
-}
 
 int main(int, char**)
 {
@@ -89,21 +83,7 @@ int main(int, char**)
     ImGui_ImplDX11_Init(menu.g_pd3dDevice, menu.g_pd3dDeviceContext);
     ImGui::StyleColorsDark();
 
-    SDL_Tray* tray;
-    SDL_TrayMenu* tmenu;
-    SDL_TrayEntry* entry;
-    SDL_Event e;
-
-    tray = SDL_CreateTray(NULL, "My tray");
-
-    // Create a context menu for the tray.
-    tmenu = SDL_CreateTrayMenu(tray);
-
-    // Create a button in the context menu.
-    entry = SDL_InsertTrayEntryAt(tmenu, -1, "Quit", SDL_TRAYENTRY_BUTTON);
-
-    // Set the callback for the button
-    SDL_SetTrayEntryCallback(entry, callback_quit, NULL);
+    TrayHelper trayItem;
 
     // --------------------------------------
     // Finish all DX11, SDL, and ImGui setup.
@@ -320,7 +300,6 @@ int main(int, char**)
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext(menuCtx);
 
-    SDL_DestroyTray(tray);
     SDL_Quit();
 
     return 0;
