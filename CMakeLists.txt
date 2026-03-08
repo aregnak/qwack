@@ -2,13 +2,26 @@ cmake_minimum_required(VERSION 3.21)
 
 project(qwack VERSION 0.0.4)
 
+# Get git commit hash
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(NOT GIT_COMMIT_HASH)
+    set(GIT_COMMIT_HASH "nogit")
+endif()
+
+# Create version string with commit
+set(APP_VERSION_FULL "${PROJECT_VERSION}-${GIT_COMMIT_HASH}")
+
 # For consistent version
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/generated/version.h
 )
-
-
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
