@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(qwack VERSION 0.0.3)
+project(qwack VERSION 0.0.4)
 
 # For consistent version
 configure_file(
