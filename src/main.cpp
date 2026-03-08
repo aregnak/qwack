@@ -10,6 +10,7 @@
 #include <thread>
 
 #include <SDL.h>
+#include <SDL3/SDL_main.h>
 
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
@@ -30,6 +31,13 @@
 
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
+
+void callback_quit(void* userdata, SDL_TrayEntry* invoker)
+{
+    SDL_Event e;
+    e.type = SDL_EVENT_QUIT;
+    SDL_PushEvent(&e);
+}
 
 int main(int, char**)
 {
@@ -80,6 +88,22 @@ int main(int, char**)
     ImGui_ImplSDL3_InitForD3D(menuWindow);
     ImGui_ImplDX11_Init(menu.g_pd3dDevice, menu.g_pd3dDeviceContext);
     ImGui::StyleColorsDark();
+
+    SDL_Tray* tray;
+    SDL_TrayMenu* tmenu;
+    SDL_TrayEntry* entry;
+    SDL_Event e;
+
+    tray = SDL_CreateTray(NULL, "My tray");
+
+    // Create a context menu for the tray.
+    tmenu = SDL_CreateTrayMenu(tray);
+
+    // Create a button in the context menu.
+    entry = SDL_InsertTrayEntryAt(tmenu, -1, "Quit", SDL_TRAYENTRY_BUTTON);
+
+    // Set the callback for the button
+    SDL_SetTrayEntryCallback(entry, callback_quit, NULL);
 
     // --------------------------------------
     // Finish all DX11, SDL, and ImGui setup.
@@ -296,10 +320,8 @@ int main(int, char**)
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext(menuCtx);
 
+    SDL_DestroyTray(tray);
     SDL_Quit();
 
     return 0;
 }
-
-// Entry point for WIN32 (release) build.
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) { return main(__argc, __argv); }
