@@ -126,7 +126,7 @@ void MenuWindow::showMenu()
 {
     if (!visible)
     {
-        QWACK_LOG("Menu shown using Home key.");
+        QWACK_LOG("Menu shown.");
         setVisibility(true);
     }
 }

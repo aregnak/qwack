@@ -11,6 +11,7 @@ public:
 
 private:
     static void callback_open(void* userdata, SDL_TrayEntry* invoker);
+    static void callback_quit(void* userdata, SDL_TrayEntry* invoker);
 
     SDL_Tray* tray;
     SDL_TrayMenu* tmenu;

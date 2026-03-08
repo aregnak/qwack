@@ -3,14 +3,6 @@
 #include "log.h"
 #include "menuWindow.h"
 
-void callback_quit(void* userdata, SDL_TrayEntry* invoker)
-{
-    QWACK_LOG("Program terminated through tray icon.");
-    SDL_Event e;
-    e.type = SDL_EVENT_QUIT;
-    SDL_PushEvent(&e);
-}
-
 TrayHelper::TrayHelper(MenuWindow& menu)
     : _menu(menu)
 {
@@ -25,7 +17,7 @@ TrayHelper::TrayHelper(MenuWindow& menu)
 
     // Set the callback for the button
     SDL_SetTrayEntryCallback(showEntry, callback_open, this);
-    SDL_SetTrayEntryCallback(quitEntry, callback_quit, NULL);
+    SDL_SetTrayEntryCallback(quitEntry, callback_quit, this);
 }
 
 TrayHelper::~TrayHelper()
@@ -36,8 +28,14 @@ TrayHelper::~TrayHelper()
 
 void TrayHelper::callback_open(void* userdata, SDL_TrayEntry* invoker)
 {
-    QWACK_LOG("HERE");
-
     TrayHelper* self = static_cast<TrayHelper*>(userdata);
     self->_menu.showMenu();
+}
+
+void TrayHelper::callback_quit(void* userdata, SDL_TrayEntry* invoker)
+{
+    QWACK_LOG("Program terminated through tray icon.");
+    SDL_Event e;
+    e.type = SDL_EVENT_QUIT;
+    SDL_PushEvent(&e);
 }
