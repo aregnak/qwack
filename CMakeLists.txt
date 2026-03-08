@@ -2,25 +2,17 @@ cmake_minimum_required(VERSION 3.21)
 
 project(qwack VERSION 0.0.4)
 
-# Get git commit hash
-execute_process(
-    COMMAND git rev-parse --short HEAD
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_COMMIT_HASH
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-if(NOT GIT_COMMIT_HASH)
-    set(GIT_COMMIT_HASH "nogit")
-endif()
-
-# Create version string with commit
-set(APP_VERSION_FULL "${PROJECT_VERSION}-${GIT_COMMIT_HASH}")
-
-# For consistent version
-configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/version.h
+# Generate version.h at build time (re-runs git rev-parse on every build)
+add_custom_target(update_version ALL
+    COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}
+        -DBINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        -DPROJECT_VERSION=${PROJECT_VERSION}
+        -DPROJECT_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+        -DPROJECT_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+        -DPROJECT_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/UpdateVersion.cmake
+    COMMENT "Updating version.h with current git hash"
 )
 
 set(CMAKE_CXX_STANDARD 20)
@@ -71,6 +63,9 @@ add_executable(qwack
     libs/imgui/imgui_impl_sdl3.cpp
     libs/imgui/imgui_impl_dx11.cpp
 )
+
+# Ensure version.h is regenerated before qwack compiles
+add_dependencies(qwack update_version)
 
 if (MSVC)
     target_link_options(qwack PRIVATE 
