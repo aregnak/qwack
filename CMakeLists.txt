@@ -49,6 +49,7 @@ add_executable(qwack
     src/window.cpp
     src/overlayWindow.cpp
     src/menuWindow.cpp
+    src/trayHelper.cpp
 
     libs/imgui/imgui.cpp
     libs/imgui/imgui_draw.cpp
