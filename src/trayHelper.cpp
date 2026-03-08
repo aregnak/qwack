@@ -6,7 +6,7 @@
 TrayHelper::TrayHelper(MenuWindow& menu)
     : _menu(menu)
 {
-    tray = SDL_CreateTray(NULL, "My tray");
+    tray = SDL_CreateTray(NULL, "Qwack Tray");
 
     // Create a context menu for the tray.
     tmenu = SDL_CreateTrayMenu(tray);
