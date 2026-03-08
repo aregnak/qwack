@@ -124,13 +124,10 @@ bool MenuWindow::processEvent(const SDL_Event& event)
 
 void MenuWindow::handleVisibility()
 {
-    if (isHomeDown())
+    if (!visible)
     {
-        if (!visible)
-        {
-            QWACK_LOG("Menu shown using Home key.");
-            setVisibility(true);
-        }
+        QWACK_LOG("Menu shown using Home key.");
+        setVisibility(true);
     }
 }
 

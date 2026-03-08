@@ -83,7 +83,7 @@ int main(int, char**)
     ImGui_ImplDX11_Init(menu.g_pd3dDevice, menu.g_pd3dDeviceContext);
     ImGui::StyleColorsDark();
 
-    TrayHelper trayItem;
+    TrayHelper trayItem(menu);
 
     // --------------------------------------
     // Finish all DX11, SDL, and ImGui setup.
@@ -196,7 +196,10 @@ int main(int, char**)
             running.store(false);
         }
 
-        menu.handleVisibility();
+        if (isHomeDown())
+        {
+            menu.handleVisibility();
+        }
 
         // Render menu window
         if (menu.isVisible())
