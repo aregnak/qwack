@@ -22,7 +22,7 @@ public:
 
     bool processEvent(const SDL_Event& event);
 
-    void handleVisibility();
+    void showMenu();
 
     struct Elements
     {

@@ -198,7 +198,7 @@ int main(int, char**)
 
         if (isHomeDown())
         {
-            menu.handleVisibility();
+            menu.showMenu();
         }
 
         // Render menu window

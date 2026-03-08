@@ -122,7 +122,7 @@ bool MenuWindow::processEvent(const SDL_Event& event)
     }
 }
 
-void MenuWindow::handleVisibility()
+void MenuWindow::showMenu()
 {
     if (!visible)
     {

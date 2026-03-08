@@ -39,5 +39,5 @@ void TrayHelper::callback_open(void* userdata, SDL_TrayEntry* invoker)
     QWACK_LOG("HERE");
 
     TrayHelper* self = static_cast<TrayHelper*>(userdata);
-    self->_menu.handleVisibility();
+    self->_menu.showMenu();
 }
