@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
 #include <d3d11.h>
 // #include "graphicsDevice.h"
 

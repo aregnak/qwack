@@ -35,17 +35,10 @@ if (PORTABLE)
     endif()
 endif()
 
-# OpenSSL
+# Find library packages 
 find_package(OpenSSL REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
 
-# SDL3
-add_library(SDL3 SHARED IMPORTED)
-
-set_target_properties(SDL3 PROPERTIES
-    IMPORTED_IMPLIB "${CMAKE_SOURCE_DIR}/libs/SDL3/lib/SDL3.lib"
-    IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/libs/SDL3/bin/SDL3.dll"
-    INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/libs/SDL3/include"
-)
 
 add_executable(qwack
     src/main.cpp
@@ -87,9 +80,9 @@ target_compile_definitions(qwack PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
 
 # Link libraries
 target_link_libraries(qwack PRIVATE
-    SDL3
     d3d11
     dxgi
+    SDL3::SDL3
     OpenSSL::SSL
     OpenSSL::Crypto
 )
