@@ -87,10 +87,12 @@ target_link_libraries(qwack PRIVATE
     OpenSSL::Crypto
 )
 
+# No more manually imported libraries, no need for this for now.
+
 # Automatically copy required DLLs
-add_custom_command(TARGET qwack POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_RUNTIME_DLLS:qwack>
-    $<TARGET_FILE_DIR:qwack>
-    COMMAND_EXPAND_LISTS
-)
+#add_custom_command(TARGET qwack POST_BUILD
+#    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#    $<TARGET_RUNTIME_DLLS:qwack>
+#    $<TARGET_FILE_DIR:qwack>
+#    COMMAND_EXPAND_LISTS
+#)
