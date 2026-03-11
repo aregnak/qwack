@@ -146,8 +146,6 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
 
             if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 2)
             {
-                auto idstart = std::chrono::steady_clock::now();
-
                 _itemDiffReady.store(false);
 
                 for (size_t i = 0; i < _players.size() / 2; i++)
@@ -200,8 +198,6 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
                 _lastPoll = _now;
 
                 _itemDiffReady.store(true);
-
-                // QWACK_LOG("Item delta: " << std::chrono::steady_clock::now() - idstart);
             }
         }
     }
