@@ -5,7 +5,6 @@
 #include <windows.h>
 #include <winuser.h>
 #include <d3d11.h>
-#include <chrono>
 #include <atomic>
 #include <thread>
 
@@ -75,18 +74,6 @@ int main(int, char**)
     MenuWindow menu;
     menu.Create();
     SDL_Window* menuWindow = menu.getWindow();
-
-    // SDL_Surface* iconSurface = SDL_LoadBMP("duck.bmp");
-
-    // if (!iconSurface)
-    // {
-    //     QWACK_LOG("Failed to load Icon");
-    // }
-    // else
-    // {
-    //     SDL_SetWindowIcon(menuWindow, iconSurface);
-    //     SDL_DestroySurface(iconSurface);
-    // }
 
     // Menu context
     ImGuiContext* menuCtx = ImGui::CreateContext();
