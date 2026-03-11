@@ -57,6 +57,8 @@ add_executable(qwack
     libs/imgui/imgui_impl_dx11.cpp
 )
 
+target_sources(qwack PRIVATE app.rc)
+
 # Ensure version.h is regenerated before qwack compiles
 add_dependencies(qwack update_version)
 

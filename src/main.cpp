@@ -76,6 +76,18 @@ int main(int, char**)
     menu.Create();
     SDL_Window* menuWindow = menu.getWindow();
 
+    // SDL_Surface* iconSurface = SDL_LoadBMP("duck.bmp");
+
+    // if (!iconSurface)
+    // {
+    //     QWACK_LOG("Failed to load Icon");
+    // }
+    // else
+    // {
+    //     SDL_SetWindowIcon(menuWindow, iconSurface);
+    //     SDL_DestroySurface(iconSurface);
+    // }
+
     // Menu context
     ImGuiContext* menuCtx = ImGui::CreateContext();
     ImGui::SetCurrentContext(menuCtx);
