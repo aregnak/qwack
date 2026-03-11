@@ -45,6 +45,7 @@ private:
     void getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<bool>& practicetool);
 
     void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold);
+    void pollGoldDiff();
 
     void resetInGameCache(std::atomic<bool>& practicetool, std::atomic<float>& csPerMin);
 

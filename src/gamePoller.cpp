@@ -143,58 +143,7 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
 
             if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 2)
             {
-                _itemDiffReady.store(false);
-
-                for (size_t i = 0; i < _players.size() / 2; i++)
-                {
-                    PlayerInfo& currentPlayer = _players[i]; // Blue team
-                    PlayerInfo& laneOpponent = _players[i + 5]; // Red team
-
-                    std::vector<int> bluePlayerItemIDs = _poller.getPlayerItemIDs(currentPlayer);
-                    std::sort(bluePlayerItemIDs.begin(), bluePlayerItemIDs.end());
-
-                    // You might be wondering why I don't sort currentPlayer and laneOpponent itemIDs,
-                    // this is because those vectors are filled with the value of the already sorted
-                    // bluePlayerItemIDs or redPlayerItemIDs respecively, so sorting the already sorted
-                    // vector is not ideal in this case. This only works because this is the only place
-                    // that writes into the PlayerInfo itemIDs.
-
-                    if (!std::equal(bluePlayerItemIDs.begin(), bluePlayerItemIDs.end(),
-                                    currentPlayer.itemIDs.begin(), currentPlayer.itemIDs.end()))
-                    {
-                        currentPlayer.totalItemPrice = 0;
-                        for (int& itemID : bluePlayerItemIDs)
-                        {
-                            int price = _poller.getItemPrice(std::to_string(itemID));
-                            currentPlayer.totalItemPrice += price;
-                        }
-
-                        currentPlayer.itemIDs = std::move(bluePlayerItemIDs);
-                    }
-
-                    std::vector<int> redPlayerItemIDs = _poller.getPlayerItemIDs(laneOpponent);
-                    std::sort(redPlayerItemIDs.begin(), redPlayerItemIDs.end());
-
-                    if (!std::equal(redPlayerItemIDs.begin(), redPlayerItemIDs.end(),
-                                    laneOpponent.itemIDs.begin(), laneOpponent.itemIDs.end()))
-                    {
-                        laneOpponent.totalItemPrice = 0;
-                        for (int& itemID : redPlayerItemIDs)
-                        {
-                            int price = _poller.getItemPrice(std::to_string(itemID));
-                            laneOpponent.totalItemPrice += price;
-                        }
-
-                        laneOpponent.itemIDs = std::move(redPlayerItemIDs);
-                    }
-
-                    // Compute delta
-                    _itemGoldDiff[i] = (currentPlayer.totalItemPrice - laneOpponent.totalItemPrice);
-                }
-
-                _lastPoll = _now;
-
-                _itemDiffReady.store(true);
+                pollGoldDiff();
             }
         }
     }
@@ -337,6 +286,62 @@ void GamePoller::getCSPM(std::atomic<float>& csPerMin, int currentCS, float time
         }
         csPerMin.store(_totalCS / (time / 60.0f), std::memory_order_relaxed);
     }
+}
+
+void GamePoller::pollGoldDiff()
+{
+    _itemDiffReady.store(false);
+
+    for (size_t i = 0; i < _players.size() / 2; i++)
+    {
+        PlayerInfo& currentPlayer = _players[i]; // Blue team
+        PlayerInfo& laneOpponent = _players[i + 5]; // Red team
+
+        std::vector<int> bluePlayerItemIDs = _poller.getPlayerItemIDs(currentPlayer);
+        std::sort(bluePlayerItemIDs.begin(), bluePlayerItemIDs.end());
+
+        // You might be wondering why I don't sort currentPlayer and laneOpponent itemIDs,
+        // this is because those vectors are filled with the value of the already sorted
+        // bluePlayerItemIDs or redPlayerItemIDs respecively, so sorting the already sorted
+        // vector is not ideal in this case. This only works because this is the only place
+        // that writes into the PlayerInfo itemIDs.
+
+        if (!std::equal(bluePlayerItemIDs.begin(), bluePlayerItemIDs.end(),
+                        currentPlayer.itemIDs.begin(), currentPlayer.itemIDs.end()))
+        {
+            currentPlayer.totalItemPrice = 0;
+            for (int& itemID : bluePlayerItemIDs)
+            {
+                int price = _poller.getItemPrice(std::to_string(itemID));
+                currentPlayer.totalItemPrice += price;
+            }
+
+            currentPlayer.itemIDs = std::move(bluePlayerItemIDs);
+        }
+
+        std::vector<int> redPlayerItemIDs = _poller.getPlayerItemIDs(laneOpponent);
+        std::sort(redPlayerItemIDs.begin(), redPlayerItemIDs.end());
+
+        if (!std::equal(redPlayerItemIDs.begin(), redPlayerItemIDs.end(),
+                        laneOpponent.itemIDs.begin(), laneOpponent.itemIDs.end()))
+        {
+            laneOpponent.totalItemPrice = 0;
+            for (int& itemID : redPlayerItemIDs)
+            {
+                int price = _poller.getItemPrice(std::to_string(itemID));
+                laneOpponent.totalItemPrice += price;
+            }
+
+            laneOpponent.itemIDs = std::move(redPlayerItemIDs);
+        }
+
+        // Compute delta
+        _itemGoldDiff[i] = (currentPlayer.totalItemPrice - laneOpponent.totalItemPrice);
+    }
+
+    _lastPoll = _now;
+
+    _itemDiffReady.store(true);
 }
 
 void GamePoller::resetInGameCache(std::atomic<bool>& practicetool, std::atomic<float>& csPerMin)
