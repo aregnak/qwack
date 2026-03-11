@@ -19,7 +19,7 @@ struct PlayerInfo
     std::string role;
     std::string team;
 
-    std::vector<std::string> itemIDs;
+    std::vector<int> itemIDs;
 
     PlayerInfo() = default;
 };

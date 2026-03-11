@@ -146,58 +146,62 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
 
             if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 2)
             {
+                auto idstart = std::chrono::steady_clock::now();
+
                 _itemDiffReady.store(false);
 
                 for (size_t i = 0; i < _players.size() / 2; i++)
                 {
-                    PlayerInfo& currentPlayer = _players[i];
-                    PlayerInfo& laneOpponent = _players[i + 5];
+                    PlayerInfo& currentPlayer = _players[i]; // Blue team
+                    PlayerInfo& laneOpponent = _players[i + 5]; // Red team
 
-                    _poller.getPlayerItemIDs(currentPlayer);
-                    _poller.getPlayerItemIDs(laneOpponent);
+                    std::vector<int> bluePlayerItemIDs = _poller.getPlayerItemIDs(currentPlayer);
+                    std::sort(bluePlayerItemIDs.begin(), bluePlayerItemIDs.end());
 
-                    // _poller.getPlayerItemSum(currentPlayer);
-                    // _poller.getPlayerItemSum(laneOpponent);
+                    // You might be wondering why I don't sort currentPlayer and laneOpponent itemIDs,
+                    // this is because those vectors are filled with the value of the already sorted
+                    // bluePlayerItemIDs or redPlayerItemIDs respecively, so sorting the already sorted
+                    // vector is not ideal in this case. This only works because this is the only place
+                    // that writes into the PlayerInfo itemIDs.
 
-                    // ! Add a for loop that goes through itemIDs and checks if theres a difference from last poll
-                    // ORRRRR make that checking happen when getting itemIDs, and have a flag that tells us to:
-                    // poll for that item's price, and add it to the total.
-
-                    // std::thread itemPriceThread(
-                    //     [&]()
-                    //     {
-                    currentPlayer.totalItemPrice = 0;
-                    for (std::string& itemID : currentPlayer.itemIDs)
+                    if (!std::equal(bluePlayerItemIDs.begin(), bluePlayerItemIDs.end(),
+                                    currentPlayer.itemIDs.begin(), currentPlayer.itemIDs.end()))
                     {
-                        int price = _poller.getItemPrice(itemID);
-                        currentPlayer.totalItemPrice += price;
+                        currentPlayer.totalItemPrice = 0;
+                        for (int& itemID : bluePlayerItemIDs)
+                        {
+                            int price = _poller.getItemPrice(std::to_string(itemID));
+                            currentPlayer.totalItemPrice += price;
+                        }
+
+                        currentPlayer.itemIDs = std::move(bluePlayerItemIDs);
                     }
 
-                    laneOpponent.totalItemPrice = 0;
-                    for (std::string& itemID : laneOpponent.itemIDs)
+                    std::vector<int> redPlayerItemIDs = _poller.getPlayerItemIDs(laneOpponent);
+                    std::sort(redPlayerItemIDs.begin(), redPlayerItemIDs.end());
+
+                    if (!std::equal(redPlayerItemIDs.begin(), redPlayerItemIDs.end(),
+                                    laneOpponent.itemIDs.begin(), laneOpponent.itemIDs.end()))
                     {
-                        int price = _poller.getItemPrice(itemID);
-                        laneOpponent.totalItemPrice += price;
+                        laneOpponent.totalItemPrice = 0;
+                        for (int& itemID : redPlayerItemIDs)
+                        {
+                            int price = _poller.getItemPrice(std::to_string(itemID));
+                            laneOpponent.totalItemPrice += price;
+                        }
+
+                        laneOpponent.itemIDs = std::move(redPlayerItemIDs);
                     }
-                    //     });
 
-                    // if (itemPriceThread.joinable())
-                    // {
-                    //     itemPriceThread.join();
-                    // }
-
+                    // Compute delta
                     _itemGoldDiff[i] = (currentPlayer.totalItemPrice - laneOpponent.totalItemPrice);
                 }
 
-                // for (int i : _itemGoldDiff)
-                // {
-                //     QWACK_LOG("DIFF: " << i);
-                // }
-
-                // std::cout << "\n";
                 _lastPoll = _now;
 
                 _itemDiffReady.store(true);
+
+                QWACK_LOG("Item delta: " << std::chrono::steady_clock::now() - idstart);
             }
         }
     }

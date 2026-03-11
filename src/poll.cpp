@@ -198,21 +198,24 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
     }
 }
 
-void poll::getPlayerItemIDs(PlayerInfo& player)
+std::vector<int> poll::getPlayerItemIDs(PlayerInfo& player)
 {
+    std::vector<int> itemIDs;
+
     for (const auto& j : gameDataCache["allPlayers"])
     {
         if (j["championName"] == player.champ)
         {
             // For now, clear all player itemIDs and store the new ones.
             // Yes this is slow, but I will update this to a better algorithm once this feature works.
-            player.itemIDs.clear();
+            // player.itemIDs.clear();
             for (const auto& i : j["items"])
             {
-                player.itemIDs.push_back(std::to_string(i["itemID"].get<int>()));
+                itemIDs.push_back(i["itemID"].get<int>());
+                // player.itemIDs.push_back(std::to_string(i["itemID"].get<int>()));
             }
 
-            break;
+            return itemIDs;
         }
     }
 }
