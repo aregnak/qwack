@@ -81,42 +81,25 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameS
         _inLobby = true;
     }
 
-    _now = std::chrono::steady_clock::now();
+    // _now = std::chrono::steady_clock::now();
 
-    if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 5)
+    // if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 5)
+    // {
+    if (_poller.update())
     {
-        if (_poller.update())
+        if (!_playersLoaded)
         {
-            if (!_playersLoaded)
-            {
-                std::vector<PlayerInfo> newPlayers(10);
-                LCU_LOG("Polling Player Info...");
+            getAndSortSessionPlayers(lcuC, practicetool);
+        }
 
-                _poller.getSessionInfo(lcuC, newPlayers, _gameMode);
-
-                if (newPlayers.empty())
-                {
-                    practicetool.store(true);
-                    QWACK_LOG("Gamemode is practice tool, skipping player info");
-                }
-
-                if (!practicetool.load())
-                {
-                    getAllPlayersInfo(newPlayers, lcuC);
-                }
-                _playersLoaded = true;
-
-                _players = std::move(newPlayers);
-            }
-
-            // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
-            // This makes the INGAME state really mean loaded into the game, not just loading screen.
-            if (_poller.getGameTime() > 0.5f)
-            {
-                gameState.store(gameState::INGAME);
-            }
+        // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
+        // This makes the INGAME state really mean loaded into the game, not just loading screen.
+        if (_poller.getGameTime() > 0.5f)
+        {
+            gameState.store(gameState::INGAME);
         }
     }
+    // }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
@@ -142,6 +125,20 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
         // Item price polling
         if (!practicetool)
         {
+            if (_playerInfoFailed)
+            {
+                _playerInfoNow = std::chrono::steady_clock::now();
+                if (std::chrono::duration_cast<std::chrono::seconds>(_playerInfoNow -
+                                                                     _playerInfoLast)
+                        .count() > 2)
+                {
+                    QWACK_LOG("Retrying player info fetch in game state.");
+                    getAndSortSessionPlayers(lcuC, practicetool);
+
+                    _playerInfoLast = _playerInfoNow;
+                }
+            }
+
             _now = std::chrono::steady_clock::now();
 
             if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 2)
@@ -225,6 +222,8 @@ void GamePoller::getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClien
     // to get players' ranks, we need the puuid, but to get their in game
     // stats, we need the live API (yes, different).
     // this code is very messy for now.
+    _playerInfoFailed = false;
+
     for (auto& p : newPlayers)
     {
         p.riotID = _poller.getPlayerName(lcuC, p.puuid);
@@ -232,42 +231,80 @@ void GamePoller::getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClien
 
         p.champ = _poller.getChampionNameById(p.champID);
         _poller.getPlayerRoleAndTeam(p);
-        // LCU_LOG("riotID: " << p.riotID << " rank: " << p.rank << " role: " << p.role
-        //                    << " team: " << p.team);
+
+        auto fields = { p.riotID, p.rank, p.champ, p.role, p.team };
+        if (std::any_of(fields.begin(), fields.end(), [](const auto& s) { return s.empty(); }))
+        {
+            _playerInfoFailed = true;
+            break;
+        }
     }
 
-    sortPlayers(newPlayers);
-
-    for (const auto& p : newPlayers)
+    if (!_playerInfoFailed)
     {
-        char rankLetter = p.rank[0];
-        int tierNumber = romanToInt(p.rank.substr(p.rank.find(' ') + 1));
+        sortPlayers(newPlayers);
 
-        if (tierNumber != -1)
+        for (const auto& p : newPlayers)
         {
-            std::ostringstream oss;
-            oss << rankLetter;
+            char rankLetter = p.rank[0];
+            int tierNumber = romanToInt(p.rank.substr(p.rank.find(' ') + 1));
 
-            // If rank doesn't contain tiers (Master+).
-            if (tierNumber != 0)
+            if (tierNumber != -1)
             {
-                oss << tierNumber;
+                std::ostringstream oss;
+                oss << rankLetter;
+
+                // If rank doesn't contain tiers (Master+).
+                if (tierNumber != 0)
+                {
+                    oss << tierNumber;
+                }
+
+                _ranks.push_back(oss.str());
+            }
+            else
+            {
+                // If invalid tier returned, empty string.
+                _ranks.push_back("");
             }
 
-            _ranks.push_back(oss.str());
-        }
-        else
-        {
-            // If invalid tier returned, empty string.
-            _ranks.push_back("");
+            LCU_LOG("puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
+                              << " role: " << p.role << " team: " << p.team);
         }
 
-        LCU_LOG("puuid: " << p.puuid << " riotID: " << p.riotID << " rank: " << p.rank
-                          << " role: " << p.role << " team: " << p.team);
+        _ranksReady.store(true);
+        QWACK_LOG("Successfully loaded players.");
+    }
+}
+
+void GamePoller::getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<bool>& practicetool)
+{
+    std::vector<PlayerInfo> newPlayers(10);
+    LCU_LOG("Polling Player Info...");
+
+    _poller.getSessionInfo(lcuC, newPlayers, _gameMode);
+
+    if (newPlayers.empty())
+    {
+        practicetool.store(true);
+        QWACK_LOG("Gamemode is practice tool, skipping player info");
     }
 
-    _ranksReady.store(true);
-    QWACK_LOG("Successfully loaded players.");
+    if (!practicetool.load())
+    {
+        getAllPlayersInfo(newPlayers, lcuC);
+    }
+
+    if (!_playerInfoFailed)
+    {
+        _playersLoaded = true;
+        _players = std::move(newPlayers);
+        QWACK_LOG("Player info fetching succeeded.");
+    }
+    else
+    {
+        QWACK_LOG("Player info fetching failed.");
+    }
 }
 
 void GamePoller::getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold)

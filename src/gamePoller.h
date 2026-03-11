@@ -42,6 +42,7 @@ public:
 private:
     void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC);
     void getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);
+    void getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<bool>& practicetool);
 
     void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold);
 
@@ -65,6 +66,8 @@ private:
     std::vector<PlayerInfo> _players;
     std::vector<std::string> _ranks;
 
+    bool _playerInfoFailed = false;
+
     std::mutex _dataMutex;
     std::atomic<bool> _ranksReady;
 
@@ -74,4 +77,9 @@ private:
     // :(
     std::chrono::time_point<std::chrono::steady_clock> _now = std::chrono::steady_clock::now();
     std::chrono::time_point<std::chrono::steady_clock> _lastPoll = std::chrono::steady_clock::now();
+
+    std::chrono::time_point<std::chrono::steady_clock> _playerInfoNow =
+        std::chrono::steady_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> _playerInfoLast =
+        std::chrono::steady_clock::now();
 };
