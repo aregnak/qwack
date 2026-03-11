@@ -214,8 +214,6 @@ std::vector<int> poll::getPlayerItemIDs(PlayerInfo& player)
             return itemIDs;
         }
     }
-
-    return itemIDs;
 }
 
 int poll::getcs(const std::string& playerName)
