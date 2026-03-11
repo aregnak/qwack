@@ -125,6 +125,7 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
         // Item price polling
         if (!practicetool)
         {
+            // Retry polling players if failed initially.
             if (_playerInfoFailed)
             {
                 _playerInfoNow = std::chrono::steady_clock::now();
@@ -138,12 +139,14 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
                     _playerInfoLast = _playerInfoNow;
                 }
             }
-
-            _now = std::chrono::steady_clock::now();
-
-            if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 2)
+            else // If session players' info loaded successfully.
             {
-                pollGoldDiff();
+                _now = std::chrono::steady_clock::now();
+
+                if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 2)
+                {
+                    pollGoldDiff();
+                }
             }
         }
     }
