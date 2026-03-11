@@ -201,7 +201,7 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
 
                 _itemDiffReady.store(true);
 
-                QWACK_LOG("Item delta: " << std::chrono::steady_clock::now() - idstart);
+                // QWACK_LOG("Item delta: " << std::chrono::steady_clock::now() - idstart);
             }
         }
     }
