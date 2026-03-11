@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 // This is different from MSVC Debug build, this is for static json tests.
 // TODO: Create a better way to conduct static tests.
-#define DEBUG_ENABLED true
+#define DEBUG_ENABLED false
 
 poll::poll()
     : cli("127.0.0.1", 2999)

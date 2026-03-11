@@ -69,6 +69,9 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
         // Maybe this is poor design, but the while loops will be exitted
         // only when you actually launch the client, so state becomes lobby at this point.
         gameState.store(gameState::LOBBY);
+
+        // Make sure the nest time _lastPoll is compared, the difference is more than 5 seconds.
+        _lastPoll = std::chrono::steady_clock::now() - std::chrono::seconds(6);
     }
 }
 
@@ -81,25 +84,27 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameS
         _inLobby = true;
     }
 
-    // _now = std::chrono::steady_clock::now();
+    _now = std::chrono::steady_clock::now();
 
-    // if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 5)
-    // {
-    if (_poller.update())
+    if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 5)
     {
-        if (!_playersLoaded)
+        if (_poller.update())
         {
-            getAndSortSessionPlayers(lcuC, practicetool);
+            if (!_playersLoaded)
+            {
+                getAndSortSessionPlayers(lcuC, practicetool);
+            }
+
+            // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
+            // This makes the INGAME state really mean loaded into the game, not just loading screen.
+            if (_poller.getGameTime() > 0.5f)
+            {
+                gameState.store(gameState::INGAME);
+            }
         }
 
-        // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
-        // This makes the INGAME state really mean loaded into the game, not just loading screen.
-        if (_poller.getGameTime() > 0.5f)
-        {
-            gameState.store(gameState::INGAME);
-        }
+        _lastPoll = _now;
     }
-    // }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
