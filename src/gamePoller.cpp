@@ -309,14 +309,13 @@ void GamePoller::pollGoldDiff()
         PlayerInfo& currentPlayer = _players[i]; // Blue team
         PlayerInfo& laneOpponent = _players[i + 5]; // Red team
 
+        // Poll for currentPlayer's items and sort them, then check for a difference
+        // with currentPlayer's items from last poll (currentPlayer.itemIDs), and if
+        // there is a difference, recalculate total item price and move the new item
+        // vector into currentPlayer.
+
         std::vector<int> bluePlayerItemIDs = _poller.getPlayerItemIDs(currentPlayer);
         std::sort(bluePlayerItemIDs.begin(), bluePlayerItemIDs.end());
-
-        // You might be wondering why I don't sort currentPlayer and laneOpponent itemIDs,
-        // this is because those vectors are filled with the value of the already sorted
-        // bluePlayerItemIDs or redPlayerItemIDs respecively, so sorting the already sorted
-        // vector is not ideal in this case. This only works because this is the only place
-        // that writes into the PlayerInfo itemIDs.
 
         if (!std::equal(bluePlayerItemIDs.begin(), bluePlayerItemIDs.end(),
                         currentPlayer.itemIDs.begin(), currentPlayer.itemIDs.end()))
@@ -331,6 +330,8 @@ void GamePoller::pollGoldDiff()
             currentPlayer.itemIDs = std::move(bluePlayerItemIDs);
         }
 
+        // Do the same for the red team player. `laneOpponent` is a bad name here
+        // because it makes this process sound relative to our player's team. It isn't.
         std::vector<int> redPlayerItemIDs = _poller.getPlayerItemIDs(laneOpponent);
         std::sort(redPlayerItemIDs.begin(), redPlayerItemIDs.end());
 
