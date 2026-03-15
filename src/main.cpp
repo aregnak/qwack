@@ -34,7 +34,7 @@
 
 int main(int, char**)
 {
-    // SDL2 init
+    // SDL3 init
     if (!SDL_Init(SDL_INIT_VIDEO))
     {
         printf("Error: SDL_Init(): %s\n", SDL_GetError());

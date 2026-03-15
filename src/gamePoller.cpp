@@ -70,7 +70,7 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
         // only when you actually launch the client, so state becomes lobby at this point.
         gameState.store(gameState::LOBBY);
 
-        // Make sure the nest time _lastPoll is compared, the difference is more than 5 seconds.
+        // Make sure the next time _lastPoll is compared, the difference is more than 5 seconds.
         _lastPoll = std::chrono::steady_clock::now() - std::chrono::seconds(6);
     }
 }
@@ -81,6 +81,9 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameS
     if (!_inLobby)
     {
         resetInGameCache(practicetool, csPerMin);
+
+        QWACK_LOG("In lobby. Waiting for game.");
+
         _inLobby = true;
     }
 
@@ -115,8 +118,9 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
 {
     if (_inLobby)
     {
-        _inLobby = false;
         QWACK_LOG("GLHF.");
+
+        _inLobby = false;
     }
 
     if (_poller.update())
@@ -138,7 +142,7 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
                                                                      _playerInfoLast)
                         .count() > 2)
                 {
-                    QWACK_LOG("Retrying player info fetch in game state.");
+                    QWACK_LOG("Retrying player info fetch in in-game state.");
                     getAndSortSessionPlayers(lcuC, practicetool);
 
                     _playerInfoLast = _playerInfoNow;
@@ -372,7 +376,7 @@ void GamePoller::resetInGameCache(std::atomic<bool>& practicetool, std::atomic<f
     practicetool.store(false);
     csPerMin.store(0.0f);
 
-    QWACK_LOG("In lobby. Waiting for game.");
+    QWACK_LOG("In game cache reset.");
 }
 
 void GamePoller::resetPlayerName()
