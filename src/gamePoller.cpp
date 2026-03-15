@@ -417,6 +417,9 @@ std::vector<int> GamePoller::getItemGoldDiff()
     //
 }
 
+// TODO: make a gameData class or something to house game data debug info.
+// and just pass that object's reference to GamePoller and MenuWindow.
+// TODO: figure it out.
 const std::string GamePoller::getGameMode()
 {
     return _gameMode;
