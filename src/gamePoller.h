@@ -23,10 +23,10 @@ public:
                            std::atomic<bool>& running);
 
     void handleLobbyState(LCUClient& lcuC, std::atomic<leagueState>& leagueState,
-                          std::atomic<bool>& practicetool, std::atomic<float>& csPerMin);
+                          std::atomic<GameMode>& gameMode, std::atomic<float>& csPerMin);
 
-    void handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin,
-                           std::atomic<leagueState>& leagueState, std::atomic<bool>& practicetool);
+    void handleInGameState(LCUClient& lcuC, std::atomic<leagueState>& leagueState,
+                           std::atomic<GameMode>& gameMode, std::atomic<float>& csPerMin);
 
     void resetPlayerName();
     void setPrintedWaitingForClient(bool state);
@@ -42,12 +42,12 @@ public:
 private:
     void getPlayerName(std::atomic<leagueState>& leagueState, LCUClient& lcuC);
     void getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);
-    void getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<bool>& practicetool);
+    void getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<GameMode>& gameMode);
 
     void getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold);
     void pollGoldDiff();
 
-    void resetInGameCache(std::atomic<bool>& practicetool, std::atomic<float>& csPerMin);
+    void resetInGameCache(std::atomic<GameMode>& gameMode, std::atomic<float>& csPerMin);
 
     bool _playersLoaded = false;
     bool _inLobby = false;

@@ -88,7 +88,8 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
     return nstream.str();
 }
 
-void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players, std::string& gameMode)
+void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
+                          std::atomic<GameMode>& gameMode)
 {
 #if DEBUG_ENABLED
     auto body = loadJsonFile("./session2.json");
@@ -100,10 +101,30 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players, std:
 
 #endif // DEBUG_ENABLED
 
-    gameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
-    LCU_LOG("Game mode: " << gameMode);
+    std::string parsedGameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
 
-    if (gameMode != "PRACTICETOOL")
+    // Prototype code.
+    static const std::unordered_map<std::string, GameMode> stringToGameMode = {
+        { "CLASSIC", GameMode::CLASSIC },
+        { "SWIFTPLAY", GameMode::SWIFTPLAY },
+        { "ARAM", GameMode::ARAM },
+        { "KIWI", GameMode::KIWI },
+        { "PRACTICETOOL", GameMode::PRACTICETOOL }
+    };
+
+    if (session.contains("gameData") && session["gameData"].contains("gameMode") &&
+        session["gameData"]["gameMode"].is_string())
+    {
+        parsedGameMode = session["gameData"]["gameMode"];
+    }
+
+    auto it = stringToGameMode.find(parsedGameMode);
+    gameMode.store(it != stringToGameMode.end() ? it->second : GameMode::UNKNOWN);
+    // Refactor this mess into a function.
+
+    LCU_LOG("Game mode: " << parsedGameMode);
+
+    if (parsedGameMode != "PRACTICETOOL")
     {
         size_t i = 0;
         for (const auto& p : session["gameData"]["playerChampionSelections"])

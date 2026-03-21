@@ -76,11 +76,11 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<leagueState>& le
 }
 
 void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<leagueState>& leagueState,
-                                  std::atomic<bool>& practicetool, std::atomic<float>& csPerMin)
+                                  std::atomic<GameMode>& gameMode, std::atomic<float>& csPerMin)
 {
     if (!_inLobby)
     {
-        resetInGameCache(practicetool, csPerMin);
+        resetInGameCache(gameMode, csPerMin);
 
         QWACK_LOG("In lobby. Waiting for game.");
 
@@ -95,7 +95,7 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<leagueState>& lea
         {
             if (!_playersLoaded)
             {
-                getAndSortSessionPlayers(lcuC, practicetool);
+                getAndSortSessionPlayers(lcuC, gameMode);
             }
 
             // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
@@ -112,9 +112,8 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<leagueState>& lea
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 }
 
-void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin,
-                                   std::atomic<leagueState>& leagueState,
-                                   std::atomic<bool>& practicetool)
+void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<leagueState>& leagueState,
+                                   std::atomic<GameMode>& gameMode, std::atomic<float>& csPerMin)
 {
     if (_inLobby)
     {
@@ -132,7 +131,7 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
         getCSPM(csPerMin, _currentCS, time, gold);
 
         // Item price polling
-        if (!practicetool)
+        if (gameMode.load() != GameMode::PRACTICETOOL && gameMode.load() != GameMode::SPECTATOR)
         {
             // Retry polling players if failed initially.
             if (_playerInfoFailed)
@@ -143,7 +142,7 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
                         .count() > 2)
                 {
                     QWACK_LOG("Retrying player info fetch in in-game state.");
-                    getAndSortSessionPlayers(lcuC, practicetool);
+                    getAndSortSessionPlayers(lcuC, gameMode);
 
                     _playerInfoLast = _playerInfoNow;
                 }
@@ -238,20 +237,20 @@ void GamePoller::getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClien
     }
 }
 
-void GamePoller::getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<bool>& practicetool)
+void GamePoller::getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<GameMode>& gameMode)
 {
     std::vector<PlayerInfo> newPlayers(10);
     LCU_LOG("Polling Player Info...");
 
-    _poller.getSessionInfo(lcuC, newPlayers, _gameMode);
+    _poller.getSessionInfo(lcuC, newPlayers, gameMode);
 
     if (newPlayers.empty())
     {
-        practicetool.store(true);
+        gameMode.store(GameMode::PRACTICETOOL);
         QWACK_LOG("Gamemode is practice tool, skipping player info");
     }
 
-    if (!practicetool.load())
+    if (gameMode.load() != GameMode::PRACTICETOOL)
     {
         getAllPlayersInfo(newPlayers, lcuC);
     }
@@ -357,7 +356,7 @@ void GamePoller::pollGoldDiff()
     _itemDiffReady.store(true);
 }
 
-void GamePoller::resetInGameCache(std::atomic<bool>& practicetool, std::atomic<float>& csPerMin)
+void GamePoller::resetInGameCache(std::atomic<GameMode>& gameMode, std::atomic<float>& csPerMin)
 {
     _ranks.clear();
     _ranksReady.store(false);
@@ -374,7 +373,7 @@ void GamePoller::resetInGameCache(std::atomic<bool>& practicetool, std::atomic<f
 
     _gameMode.clear();
 
-    practicetool.store(false);
+    gameMode.store(GameMode::NONE);
     csPerMin.store(0.0f);
 
     QWACK_LOG("In game cache reset.");

@@ -7,6 +7,7 @@
 #include "httplib.h"
 #include "json.hpp"
 
+#include "game.h"
 #include "lcuClient.h"
 #include "playerInfo.h"
 
@@ -19,7 +20,7 @@ public:
 
     // Using LCU (in client).
     std::string getCurrentSummoner(LCUClient&);
-    void getSessionInfo(LCUClient&, std::vector<PlayerInfo>&, std::string& gameMode);
+    void getSessionInfo(LCUClient&, std::vector<PlayerInfo>&, std::atomic<GameMode>& gameMode);
     std::string getPlayerName(LCUClient&, const std::string);
     std::string getPlayerRank(LCUClient&, const std::string);
 

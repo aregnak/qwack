@@ -10,6 +10,21 @@ enum class leagueState
     INGAME
 };
 
+// Update this list.
+// Also maybe Game Mode isn't the best name? this is more like the state of the current
+// game session you're in, spectator isn't a game mode, its a state...
+enum class GameMode
+{
+    NONE,
+    UNKNOWN,
+    CLASSIC,
+    SWIFTPLAY,
+    ARAM,
+    KIWI,
+    PRACTICETOOL,
+    SPECTATOR
+};
+
 inline bool isLeagueFocused()
 {
     HWND hwnd = GetForegroundWindow();

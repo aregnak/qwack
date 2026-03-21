@@ -92,12 +92,13 @@ int main(int, char**)
     QWACK_LOG("Thank you for choosing (or being forced to) try my program, Enjoy!");
 
     std::atomic<bool> running = true;
-    std::atomic<bool> practicetool = false;
 
     std::atomic<float> csPerMin = -1.0f;
 
-    // Initial game state of closed (league not open).
+    // Initial state of closed (league not open).
     std::atomic<leagueState> leagueState = leagueState::CLOSED;
+
+    std::atomic<GameMode> gameMode = GameMode::NONE;
 
     // gp is used in both lcuThread and the main thread, mutex and atomic variables are in the class members.
     GamePoller gp;
@@ -135,11 +136,11 @@ int main(int, char**)
                             break;
 
                         case leagueState::LOBBY:
-                            gp.handleLobbyState(lcuC, leagueState, practicetool, csPerMin);
+                            gp.handleLobbyState(lcuC, leagueState, gameMode, csPerMin);
                             break;
 
                         case leagueState::INGAME:
-                            gp.handleInGameState(lcuC, csPerMin, leagueState, practicetool);
+                            gp.handleInGameState(lcuC, leagueState, gameMode, csPerMin);
                             break;
                     }
 
@@ -219,7 +220,7 @@ int main(int, char**)
         overlay.handleWindowVisibility(leagueState.load());
 
         // In game logic.
-        if (leagueState.load() == leagueState::INGAME)
+        if (leagueState.load() == leagueState::INGAME && gameMode.load() != GameMode::SPECTATOR)
         {
             if (!gotRanks && gp.isRanksReady())
             {
@@ -246,7 +247,7 @@ int main(int, char**)
 
             // Ranks & item gold diff overlay
             // Check if pressing tab (scoreboard).
-            if (!practicetool.load())
+            if (gameMode.load() != GameMode::PRACTICETOOL)
             {
                 if (overlay.isVisible() && IsTabDown())
                 {
