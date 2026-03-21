@@ -374,7 +374,7 @@ void GamePoller::resetInGameCache(std::atomic<GameMode>& gameMode, std::atomic<f
     _lastCS = 0;
     _estimatedCS = 0;
     _totalCS = 0;
-    _lastGold = 0.0f;
+    _lastGold = 500.0f;
 
     _gameMode.clear();
 

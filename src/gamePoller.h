@@ -57,7 +57,7 @@ private:
     int _lastCS = 0;
     int _estimatedCS = 0;
     int _totalCS = 0;
-    float _lastGold = 0.0f;
+    float _lastGold = 500.0f;
 
     std::string _playerName;
 
