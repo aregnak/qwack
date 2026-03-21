@@ -6,9 +6,10 @@ A simple League of Legends companion app capable of displaying in game statistic
 
 ### Features
 
-- CS/min display
-- Current season player ranks
-- Item gold diff per lane
+- Dynamic position overlays:
+    - CS/min display
+    - Current season player ranks
+    - Item gold diff per lane
 - Menu to toggle any overlay and display some debug information
 - More to come soon!
 
