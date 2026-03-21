@@ -13,6 +13,7 @@ enum class leagueState
 // Update this list.
 // Also maybe Game Mode isn't the best name? this is more like the state of the current
 // game session you're in, spectator isn't a game mode, its a state...
+//TUTORIAL_MODULE_1
 enum class GameMode
 {
     NONE,

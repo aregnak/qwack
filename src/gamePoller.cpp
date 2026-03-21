@@ -93,16 +93,21 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<leagueState>& lea
     {
         if (_poller.update())
         {
-            if (!_playersLoaded)
-            {
-                getAndSortSessionPlayers(lcuC, gameMode);
-            }
+            _poller.getGameMode(lcuC, gameMode);
 
-            // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
-            // This makes the INGAME state really mean loaded into the game, not just loading screen.
-            if (_poller.getGameTime() > 0.5f)
+            if (gameMode.load() != GameMode::SPECTATOR)
             {
-                leagueState.store(leagueState::INGAME);
+                if (!_playersLoaded)
+                {
+                    getAndSortSessionPlayers(lcuC, gameMode);
+                }
+
+                // Default gametime before actually loading in is 0.01810079999268055. Yeah idk either.
+                // This makes the INGAME state really mean loaded into the game, not just loading screen.
+                if (_poller.getGameTime() > 0.5f)
+                {
+                    leagueState.store(leagueState::INGAME);
+                }
             }
         }
 

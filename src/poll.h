@@ -20,6 +20,7 @@ public:
 
     // Using LCU (in client).
     std::string getCurrentSummoner(LCUClient&);
+    void getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode);
     void getSessionInfo(LCUClient&, std::vector<PlayerInfo>&, std::atomic<GameMode>& gameMode);
     std::string getPlayerName(LCUClient&, const std::string);
     std::string getPlayerRank(LCUClient&, const std::string);

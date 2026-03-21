@@ -88,6 +88,50 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
     return nstream.str();
 }
 
+void poll::getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode)
+{
+#if DEBUG_ENABLED
+    auto body = loadJsonFile("./session2.json");
+    auto session = json::parse(body, nullptr, false);
+
+#else
+    auto res = lcu.get("/lol-gameflow/v1/session");
+    auto session = json::parse(res->body);
+
+#endif // DEBUG_ENABLED
+
+    // If you watch a replay, the game mode will display as that of the actual game, not a different
+    // one specifying spectator mode. However, the active player entry will have an error instead.
+    if (gameDataCache.contains("activePlayer") && gameDataCache["activePlayer"].contains("error"))
+    {
+        gameMode.store(GameMode::SPECTATOR);
+        return;
+    }
+    else
+    {
+        std::string parsedGameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
+
+        // Prototype code.
+        static const std::unordered_map<std::string, GameMode> stringToGameMode = {
+            { "CLASSIC", GameMode::CLASSIC },
+            { "SWIFTPLAY", GameMode::SWIFTPLAY },
+            { "ARAM", GameMode::ARAM },
+            { "KIWI", GameMode::KIWI },
+            { "PRACTICETOOL", GameMode::PRACTICETOOL }
+        };
+
+        if (session.contains("gameData") && session["gameData"].contains("gameMode") &&
+            session["gameData"]["gameMode"].is_string())
+        {
+            parsedGameMode = session["gameData"]["gameMode"];
+        }
+
+        auto it = stringToGameMode.find(parsedGameMode);
+        gameMode.store(it != stringToGameMode.end() ? it->second : GameMode::UNKNOWN);
+        // Refactor this mess into a function.
+    }
+}
+
 void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
                           std::atomic<GameMode>& gameMode)
 {
@@ -101,26 +145,11 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
 
 #endif // DEBUG_ENABLED
 
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // ! Update this so there is no recursive gameMode parsing.
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     std::string parsedGameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
-
-    // Prototype code.
-    static const std::unordered_map<std::string, GameMode> stringToGameMode = {
-        { "CLASSIC", GameMode::CLASSIC },
-        { "SWIFTPLAY", GameMode::SWIFTPLAY },
-        { "ARAM", GameMode::ARAM },
-        { "KIWI", GameMode::KIWI },
-        { "PRACTICETOOL", GameMode::PRACTICETOOL }
-    };
-
-    if (session.contains("gameData") && session["gameData"].contains("gameMode") &&
-        session["gameData"]["gameMode"].is_string())
-    {
-        parsedGameMode = session["gameData"]["gameMode"];
-    }
-
-    auto it = stringToGameMode.find(parsedGameMode);
-    gameMode.store(it != stringToGameMode.end() ? it->second : GameMode::UNKNOWN);
-    // Refactor this mess into a function.
 
     LCU_LOG("Game mode: " << parsedGameMode);
 
