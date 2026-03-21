@@ -25,11 +25,13 @@ OverlayWindow::OverlayWindow(float screenWidth, float screenHeight)
         // Order team ranks
         if (i < 5)
         {
-            rankPoss[i] = ImVec2(screenWidth / 5.5f, screenHeight / 3.3f + (i * 80));
+            rankPoss[i] =
+                ImVec2(screenWidth / 5.5f, screenHeight / 3.3f + (i * (screenHeight / 13)));
         }
         else // Chaos team ranks
         {
-            rankPoss[i] = ImVec2(screenWidth / 1.25f, screenHeight / 3.3f + ((i - 5) * 80));
+            rankPoss[i] =
+                ImVec2(screenWidth / 1.25f, screenHeight / 3.3f + ((i - 5) * (screenHeight / 13)));
         }
     }
 
@@ -39,8 +41,8 @@ OverlayWindow::OverlayWindow(float screenWidth, float screenHeight)
 
     for (int i = 0; i < itemPoss.size(); i++)
     {
-        itemPoss[i] =
-            ImVec2((screenWidth / 2.0f) - (itemSumSize.x / 2.0f), screenHeight / 3.3f + (i * 80));
+        itemPoss[i] = ImVec2((screenWidth / 2.0f) - (itemSumSize.x / 2.0f),
+                             screenHeight / 3.3f + (i * (screenHeight / 13)));
     }
 }
 
