@@ -209,6 +209,7 @@ int main(int, char**)
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
 
+            // Update this to actually display the game mode.
             menu.renderMenu(menuWindow, leagueState, gp.getGameMode());
 
             ImGui::Render();

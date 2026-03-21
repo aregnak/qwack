@@ -117,7 +117,8 @@ void poll::getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode)
             { "SWIFTPLAY", GameMode::SWIFTPLAY },
             { "ARAM", GameMode::ARAM },
             { "KIWI", GameMode::KIWI },
-            { "PRACTICETOOL", GameMode::PRACTICETOOL }
+            { "PRACTICETOOL", GameMode::PRACTICETOOL },
+            { "TUTORIAL_MODULE_1", GameMode::TUTORIAL_MODULE_1 }
         };
 
         if (session.contains("gameData") && session["gameData"].contains("gameMode") &&
