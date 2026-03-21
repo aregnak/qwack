@@ -9,7 +9,7 @@ A simple League of Legends companion app capable of displaying in game statistic
 - Dynamic position overlays:
     - CS/min display
     - Current season player ranks
-    - Item gold diff per lane
+    - Item gold difference per lane (blue - red delta)
 - Menu to toggle any overlay and display some debug information
 - More to come soon!
 
