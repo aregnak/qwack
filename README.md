@@ -1,4 +1,4 @@
-# qwack
+# Qwack
 
 ### Description
 
@@ -49,7 +49,7 @@ cmake --build build --config Release
 
 \*Portable build: If you are using vcpkg, you will need to install static libraries:
 
-```
+```bash
 vcpkg install openssl:x64-windows-static
 vcpkg install sdl3:x64-windows-static
 ```
