@@ -142,9 +142,9 @@ void OverlayWindow::renderGoldDiff(std::vector<int> itemGoldDiff)
     }
 }
 
-bool OverlayWindow::handleWindowVisibility(gameState gs)
+bool OverlayWindow::handleWindowVisibility(leagueState gs)
 {
-    if (gs == gameState::INGAME && isLeagueFocused())
+    if (gs == leagueState::INGAME && isLeagueFocused())
     {
         setVisibility(true);
     }

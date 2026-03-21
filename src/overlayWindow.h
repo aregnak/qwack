@@ -23,7 +23,7 @@ public:
 
     // Call every frame — handles show/hide based on game state + League focus.
     // Returns true if the overlay is visible after the call.
-    bool handleWindowVisibility(gameState gs);
+    bool handleWindowVisibility(leagueState gs);
 
 private:
     // CS/min screen. Dynamic placement, but only tested on 1920x1200.

@@ -18,12 +18,12 @@ GamePoller::GamePoller()
     //
 }
 
-void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& gameState,
+void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<leagueState>& leagueState,
                                    std::atomic<bool>& running)
 {
     _inLobby = false;
 
-    if (gameState.load() == gameState::CLOSED)
+    if (leagueState.load() == leagueState::CLOSED)
     {
         LCUInfo lcu;
 
@@ -51,7 +51,7 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
         lcuC.connect(lcu);
 
         // Get player name
-        getPlayerName(gameState, lcuC);
+        getPlayerName(leagueState, lcuC);
 
         // Keep checking for name every 5 seconds.
         while (running.load() && _playerName.empty())
@@ -60,7 +60,7 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
 
             if (std::chrono::duration_cast<std::chrono::seconds>(_now - _lastPoll).count() > 5)
             {
-                getPlayerName(gameState, lcuC);
+                getPlayerName(leagueState, lcuC);
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -68,14 +68,14 @@ void GamePoller::handleClosedState(LCUClient& lcuC, std::atomic<gameState>& game
 
         // Maybe this is poor design, but the while loops will be exitted
         // only when you actually launch the client, so state becomes lobby at this point.
-        gameState.store(gameState::LOBBY);
+        leagueState.store(leagueState::LOBBY);
 
         // Make sure the next time _lastPoll is compared, the difference is more than 5 seconds.
         _lastPoll = std::chrono::steady_clock::now() - std::chrono::seconds(6);
     }
 }
 
-void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameState,
+void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<leagueState>& leagueState,
                                   std::atomic<bool>& practicetool, std::atomic<float>& csPerMin)
 {
     if (!_inLobby)
@@ -102,7 +102,7 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameS
             // This makes the INGAME state really mean loaded into the game, not just loading screen.
             if (_poller.getGameTime() > 0.5f)
             {
-                gameState.store(gameState::INGAME);
+                leagueState.store(leagueState::INGAME);
             }
         }
 
@@ -113,7 +113,7 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameS
 }
 
 void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin,
-                                   std::atomic<gameState>& gameState,
+                                   std::atomic<leagueState>& leagueState,
                                    std::atomic<bool>& practicetool)
 {
     if (_inLobby)
@@ -162,17 +162,17 @@ void GamePoller::handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin
     else
     {
         // If live client update doesn't update anymore.
-        gameState.store(gameState::LOBBY);
+        leagueState.store(leagueState::LOBBY);
     }
 }
 
-void GamePoller::getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC)
+void GamePoller::getPlayerName(std::atomic<leagueState>& leagueState, LCUClient& lcuC)
 {
     _playerName = _poller.getCurrentSummoner(lcuC);
 
     if (!_playerName.empty())
     {
-        gameState.store(gameState::LOBBY);
+        leagueState.store(leagueState::LOBBY);
         QWACK_LOG("Summoner found: " << _playerName);
     }
 }

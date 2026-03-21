@@ -19,14 +19,14 @@ class GamePoller
 public:
     GamePoller();
 
-    void handleClosedState(LCUClient& lcuC, std::atomic<gameState>& gameState,
+    void handleClosedState(LCUClient& lcuC, std::atomic<leagueState>& leagueState,
                            std::atomic<bool>& running);
 
-    void handleLobbyState(LCUClient& lcuC, std::atomic<gameState>& gameState,
+    void handleLobbyState(LCUClient& lcuC, std::atomic<leagueState>& leagueState,
                           std::atomic<bool>& practicetool, std::atomic<float>& csPerMin);
 
     void handleInGameState(LCUClient& lcuC, std::atomic<float>& csPerMin,
-                           std::atomic<gameState>& gameState, std::atomic<bool>& practicetool);
+                           std::atomic<leagueState>& leagueState, std::atomic<bool>& practicetool);
 
     void resetPlayerName();
     void setPrintedWaitingForClient(bool state);
@@ -40,7 +40,7 @@ public:
     const std::string getGameMode();
 
 private:
-    void getPlayerName(std::atomic<gameState>& gameState, LCUClient& lcuC);
+    void getPlayerName(std::atomic<leagueState>& leagueState, LCUClient& lcuC);
     void getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);
     void getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<bool>& practicetool);
 

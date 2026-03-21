@@ -18,7 +18,8 @@ public:
     MenuWindow();
 
     bool Create() override;
-    void renderMenu(SDL_Window* menuWindow, std::atomic<gameState>& gs, const std::string gameMode);
+    void renderMenu(SDL_Window* menuWindow, std::atomic<leagueState>& gs,
+                    const std::string gameMode);
 
     bool processEvent(const SDL_Event& event);
 
@@ -35,7 +36,7 @@ public:
 
 private:
     void handleGeneralTab();
-    void handleDebugTab(std::atomic<gameState>& gs, const std::string gameMode);
+    void handleDebugTab(std::atomic<leagueState>& gs, const std::string gameMode);
     void handleAboutTab();
 
     void handleClosing();

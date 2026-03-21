@@ -39,7 +39,7 @@ bool MenuWindow::Create()
     return true;
 }
 
-void MenuWindow::renderMenu(SDL_Window* menuWindow, std::atomic<gameState>& gs,
+void MenuWindow::renderMenu(SDL_Window* menuWindow, std::atomic<leagueState>& gs,
                             const std::string gameMode)
 {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
@@ -160,7 +160,7 @@ void MenuWindow::handleGeneralTab()
     }
 }
 
-void MenuWindow::handleDebugTab(std::atomic<gameState>& gs, const std::string gameMode)
+void MenuWindow::handleDebugTab(std::atomic<leagueState>& gs, const std::string gameMode)
 {
     ImGui::Spacing();
 
@@ -170,15 +170,15 @@ void MenuWindow::handleDebugTab(std::atomic<gameState>& gs, const std::string ga
     {
         switch (gs.load())
         {
-            case gameState::CLOSED:
+            case leagueState::CLOSED:
                 debugState = "[CLOSED] Launcher closed.";
                 break;
 
-            case gameState::LOBBY:
+            case leagueState::LOBBY:
                 debugState = "[LOBBY] Launcher open, in lobby.";
                 break;
 
-            case gameState::INGAME:
+            case leagueState::INGAME:
                 debugState = "[INGAME] In game.";
                 break;
 

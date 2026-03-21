@@ -97,7 +97,7 @@ int main(int, char**)
     std::atomic<float> csPerMin = -1.0f;
 
     // Initial game state of closed (league not open).
-    std::atomic<gameState> gameState = gameState::CLOSED;
+    std::atomic<leagueState> leagueState = leagueState::CLOSED;
 
     // gp is used in both lcuThread and the main thread, mutex and atomic variables are in the class members.
     GamePoller gp;
@@ -114,9 +114,9 @@ int main(int, char**)
                 {
                     if (!std::filesystem::exists("C:\\Riot Games\\League of Legends\\lockfile"))
                     {
-                        if (gameState.load() != gameState::CLOSED)
+                        if (leagueState.load() != leagueState::CLOSED)
                         {
-                            gameState.store(gameState::CLOSED);
+                            leagueState.store(leagueState::CLOSED);
 
                             // Reset playerName & print message.
                             gp.resetPlayerName();
@@ -128,18 +128,18 @@ int main(int, char**)
                     }
 
                     // Game state management.
-                    switch (gameState.load())
+                    switch (leagueState.load())
                     {
-                        case gameState::CLOSED:
-                            gp.handleClosedState(lcuC, gameState, running);
+                        case leagueState::CLOSED:
+                            gp.handleClosedState(lcuC, leagueState, running);
                             break;
 
-                        case gameState::LOBBY:
-                            gp.handleLobbyState(lcuC, gameState, practicetool, csPerMin);
+                        case leagueState::LOBBY:
+                            gp.handleLobbyState(lcuC, leagueState, practicetool, csPerMin);
                             break;
 
-                        case gameState::INGAME:
-                            gp.handleInGameState(lcuC, csPerMin, gameState, practicetool);
+                        case leagueState::INGAME:
+                            gp.handleInGameState(lcuC, csPerMin, leagueState, practicetool);
                             break;
                     }
 
@@ -208,7 +208,7 @@ int main(int, char**)
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
 
-            menu.renderMenu(menuWindow, gameState, gp.getGameMode());
+            menu.renderMenu(menuWindow, leagueState, gp.getGameMode());
 
             ImGui::Render();
             menu.BeginFrame();
@@ -216,10 +216,10 @@ int main(int, char**)
             menu.EndFrame();
         }
         // Check if League is focused, set visible.
-        overlay.handleWindowVisibility(gameState.load());
+        overlay.handleWindowVisibility(leagueState.load());
 
         // In game logic.
-        if (gameState.load() == gameState::INGAME)
+        if (leagueState.load() == leagueState::INGAME)
         {
             if (!gotRanks && gp.isRanksReady())
             {

@@ -3,7 +3,7 @@
 #include <windows.h>
 #include <string>
 
-enum class gameState
+enum class leagueState
 {
     CLOSED,
     LOBBY,
