@@ -8,7 +8,6 @@
 #include <chrono>
 #include <string>
 #include <thread>
-#include <wingdi.h>
 
 GamePoller::GamePoller()
     : _players(10)
@@ -249,12 +248,6 @@ void GamePoller::getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<GameMode>
 
     _poller.getSessionInfo(lcuC, newPlayers, gameMode);
 
-    if (newPlayers.empty())
-    {
-        gameMode.store(GameMode::PRACTICETOOL);
-        QWACK_LOG("Gamemode is practice tool, skipping player info");
-    }
-
     if (gameMode.load() != GameMode::PRACTICETOOL)
     {
         getAllPlayersInfo(newPlayers, lcuC);
@@ -376,8 +369,6 @@ void GamePoller::resetInGameCache(std::atomic<GameMode>& gameMode, std::atomic<f
     _totalCS = 0;
     _lastGold = 500.0f;
 
-    _gameMode.clear();
-
     gameMode.store(GameMode::NONE);
     csPerMin.store(0.0f);
 
@@ -418,14 +409,5 @@ std::vector<int> GamePoller::getItemGoldDiff()
 {
     std::lock_guard<std::mutex> lock(_dataMutex);
     return _itemGoldDiff;
-    //
-}
-
-// TODO: make a gameData class or something to house game data debug info.
-// and just pass that object's reference to GamePoller and MenuWindow.
-// TODO: figure it out.
-const std::string GamePoller::getGameMode()
-{
-    return _gameMode;
     //
 }

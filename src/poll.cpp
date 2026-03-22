@@ -167,7 +167,7 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
     }
     else
     {
-        LCU_LOG("Skipped session info.");
+        LCU_LOG("Skipped session info because game mode is practice tool.");
         players.clear();
     }
 }

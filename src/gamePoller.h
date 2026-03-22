@@ -37,8 +37,6 @@ public:
     const bool isItemDiffReady();
     std::vector<int> getItemGoldDiff();
 
-    const std::string getGameMode();
-
 private:
     void getPlayerName(std::atomic<leagueState>& leagueState, LCUClient& lcuC);
     void getAllPlayersInfo(std::vector<PlayerInfo>& newPlayers, LCUClient& lcuC);
@@ -60,8 +58,6 @@ private:
     float _lastGold = 500.0f;
 
     std::string _playerName;
-
-    std::string _gameMode;
 
     poll _poller;
     std::vector<PlayerInfo> _players;
