@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <string>
+#include <unordered_map>
 
 enum class leagueState
 {
@@ -23,8 +24,27 @@ enum class GameMode
     KIWI,
     PRACTICETOOL,
     SPECTATOR,
-    TUTORIAL_MODULE_1
+    TUTORIAL
 };
+
+const std::unordered_map<GameMode, std::string> toString = {
+
+    { GameMode::NONE, "Not in game." },   { GameMode::CLASSIC, "Classic (draft/ranked)" },
+    { GameMode::SWIFTPLAY, "Swiftplay" }, { GameMode::ARAM, "ARAM" },
+    { GameMode::KIWI, "ARAM: Mayhem" },   { GameMode::PRACTICETOOL, "Practice tool" },
+    { GameMode::TUTORIAL, "Tutorial" },   { GameMode::UNKNOWN, "Unknown from map" }
+};
+
+inline std::string gameModeToString(std::atomic<GameMode>& gameMode)
+{
+    auto it = toString.find(gameMode.load());
+    if (it != toString.end())
+    {
+        return it->second;
+    }
+
+    return "UNKNOWN";
+}
 
 inline bool isLeagueFocused()
 {

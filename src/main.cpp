@@ -210,7 +210,7 @@ int main(int, char**)
             ImGui::NewFrame();
 
             // Update this to actually display the game mode.
-            menu.renderMenu(menuWindow, leagueState, gp.getGameMode());
+            menu.renderMenu(menuWindow, leagueState, gameModeToString(gameMode));
 
             ImGui::Render();
             menu.BeginFrame();
@@ -248,7 +248,7 @@ int main(int, char**)
 
             // Ranks & item gold diff overlay
             // Check if pressing tab (scoreboard).
-            if (gameMode.load() != GameMode::PRACTICETOOL)
+            if (gameMode.load() != GameMode::PRACTICETOOL && gameMode.load() != GameMode::TUTORIAL)
             {
                 if (overlay.isVisible() && IsTabDown())
                 {

@@ -189,15 +189,7 @@ void MenuWindow::handleDebugTab(std::atomic<leagueState>& gs, const std::string 
 
         ImGui::Text("State: %s", debugState);
 
-        // ! placeholder test code.
-        if (gameMode.empty())
-        {
-            ImGui::Text("Game Mode: Not in game");
-        }
-        else
-        {
-            ImGui::Text("Game Mode: %s", gameMode);
-        }
+        ImGui::Text("Game Mode: %s", gameMode.c_str());
 
         ImGui::EndTabItem();
     }

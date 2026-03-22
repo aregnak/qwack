@@ -111,6 +111,8 @@ void poll::getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode)
     {
         std::string parsedGameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
 
+        LCU_LOG("Game mode: " << parsedGameMode);
+
         // Prototype code.
         static const std::unordered_map<std::string, GameMode> stringToGameMode = {
             { "CLASSIC", GameMode::CLASSIC },
@@ -118,7 +120,7 @@ void poll::getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode)
             { "ARAM", GameMode::ARAM },
             { "KIWI", GameMode::KIWI },
             { "PRACTICETOOL", GameMode::PRACTICETOOL },
-            { "TUTORIAL_MODULE_1", GameMode::TUTORIAL_MODULE_1 }
+            { "TUTORIAL_MODULE_1", GameMode::TUTORIAL }
         };
 
         if (session.contains("gameData") && session["gameData"].contains("gameMode") &&
@@ -146,15 +148,7 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
 
 #endif // DEBUG_ENABLED
 
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // ! Update this so there is no recursive gameMode parsing.
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    std::string parsedGameMode = session["gameData"]["queue"]["gameMode"].get<std::string>();
-
-    LCU_LOG("Game mode: " << parsedGameMode);
-
-    if (parsedGameMode != "PRACTICETOOL")
+    if (gameMode.load() != GameMode::PRACTICETOOL)
     {
         size_t i = 0;
         for (const auto& p : session["gameData"]["playerChampionSelections"])
@@ -163,6 +157,7 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
             {
                 break;
             }
+
             players[i].puuid = p["puuid"].get<std::string>();
             players[i].champID = p["championId"];
             i++;
