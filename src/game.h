@@ -27,12 +27,17 @@ enum class GameMode
     TUTORIAL
 };
 
-const std::unordered_map<GameMode, std::string> toString = {
+inline const std::unordered_map<GameMode, std::string> toString = {
 
-    { GameMode::NONE, "Not in game." },   { GameMode::CLASSIC, "Classic (draft/ranked)" },
-    { GameMode::SWIFTPLAY, "Swiftplay" }, { GameMode::ARAM, "ARAM" },
-    { GameMode::KIWI, "ARAM: Mayhem" },   { GameMode::PRACTICETOOL, "Practice tool" },
-    { GameMode::TUTORIAL, "Tutorial" },   { GameMode::UNKNOWN, "Unknown from map" }
+    { GameMode::NONE, "Not in game." },
+    { GameMode::CLASSIC, "Classic (draft/ranked)" },
+    { GameMode::SWIFTPLAY, "Swiftplay" },
+    { GameMode::ARAM, "ARAM" },
+    { GameMode::KIWI, "ARAM: Mayhem" },
+    { GameMode::PRACTICETOOL, "Practice tool" },
+    { GameMode::TUTORIAL, "Tutorial" },
+    { GameMode::UNKNOWN, "Unknown from map" },
+    { GameMode::SPECTATOR, "Viewing replay (Spectator mode)" }
 };
 
 inline std::string gameModeToString(std::atomic<GameMode>& gameMode)
