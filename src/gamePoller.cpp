@@ -109,6 +109,13 @@ void GamePoller::handleLobbyState(LCUClient& lcuC, std::atomic<leagueState>& lea
                 }
             }
         }
+        else
+        {
+            if (gameMode.load() == GameMode::SPECTATOR)
+            {
+                gameMode.store(GameMode::NONE);
+            }
+        }
 
         _lastPoll = _now;
     }
