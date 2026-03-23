@@ -13,6 +13,9 @@
 // Qwack specific messages
 #define QWACK_LOG(x) std::cerr << "[Qwack] " << x << "\n"
 
+// Windows specific messages
+#define WIN_LOG(x) std::cerr << "[WIN] " << x << "\n"
+
 #else
 
 // When built in release, to not have unnecessary print instructions we
@@ -23,6 +26,11 @@
     } while (0)
 
 #define QWACK_LOG(x)                                                                               \
+    do                                                                                             \
+    {                                                                                              \
+    } while (0)
+
+#define WIN_LOG(x)                                                                                 \
     do                                                                                             \
     {                                                                                              \
     } while (0)
