@@ -92,8 +92,6 @@ int main(int, char**)
     // Friendly welcome message!
     QWACK_LOG("Thank you for choosing (or being forced to) try my program, Enjoy!");
 
-    handleAppdataFolder();
-    
     std::atomic<bool> running = true;
 
     std::atomic<float> csPerMin = -1.0f;

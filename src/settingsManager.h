@@ -7,58 +7,28 @@
 #include "json.hpp"
 #include "log.h"
 
-// Settings.json template
-nlohmann::json createSettingsJson()
+class SettingsManager
 {
-    nlohmann::json settings;
+public:
+    // Delete copy constructor & assignment operator
+    SettingsManager(const SettingsManager&) = delete;
+    SettingsManager& operator=(const SettingsManager&) = delete;
 
-    settings["OverlaySettings"] = { { "ShowCSPM", true },
-                                    { "ShowRanks", true },
-                                    { "ShowGoldDiff", true } };
-
-    return settings;
-}
-
-void handleAppdataFolder()
-{
-    PWSTR path = nullptr;
-    if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &path)))
+    static SettingsManager& Get()
     {
-        std::wstring wpath(path);
-        CoTaskMemFree(path);
-
-        std::string folder(wpath.begin(), wpath.end());
-        folder += "\\Qwack\\";
-
-        std::filesystem::path qwackPath(folder);
-
-        if (!std::filesystem::exists(qwackPath))
-        {
-            WIN_LOG("Qwack settings folder does not exist.");
-
-            if (!std::filesystem::create_directories(qwackPath))
-            {
-                WIN_LOG("Created Qwack settings folder.");
-            }
-            else
-            {
-                WIN_LOG("Failed to create Qwack settings folder.");
-            }
-        }
-
-        // Check and create Settings.json
-        std::string settingsPath = qwackPath.string() + "Settings.json";
-
-        if (!std::filesystem::exists(settingsPath))
-        {
-            WIN_LOG("Creating Settings.json");
-
-            std::ofstream settingsFile(settingsPath);
-            settingsFile << createSettingsJson().dump(4);
-        }
+        static SettingsManager instance;
+        return instance;
     }
-    else
-    {
-        WIN_LOG("Failed to find AppData folder");
-    }
-}
+
+    nlohmann::json getSettings();
+
+private:
+    SettingsManager();
+
+    void handleAppDataFolder();
+    nlohmann::json createSettingsJson();
+    // TODO: make 1 loadJsonFile helper function to be used anywhere.
+    std::string loadJsonFile(const std::string& path);
+
+    std::string _settingsPath;
+};

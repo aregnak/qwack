@@ -44,6 +44,7 @@ add_executable(qwack
     src/main.cpp
     src/poll.cpp
     src/gamePoller.cpp
+    src/settingsManager.cpp
     src/window.cpp
     src/overlayWindow.cpp
     src/menuWindow.cpp

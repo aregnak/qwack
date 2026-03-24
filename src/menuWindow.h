@@ -8,6 +8,8 @@
 
 #include <SDL3/SDL.h>
 
+#include "json.hpp"
+
 #include "imgui.h"
 #include "imgui_impl_sdl3.h"
 #include "imgui_impl_dx11.h"
@@ -27,9 +29,9 @@ public:
 
     struct Elements
     {
-        bool showCspm = true;
-        bool showRanks = true;
-        bool showGoldDiff = true;
+        bool showCspm;
+        bool showRanks;
+        bool showGoldDiff;
     };
 
     Elements elements;
@@ -38,6 +40,7 @@ private:
     void handleGeneralTab();
     void handleDebugTab(std::atomic<leagueState>& gs, const std::string gameMode);
     void handleAboutTab();
-
     void handleClosing();
+
+    nlohmann::json _settingsJson;
 };

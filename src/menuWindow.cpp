@@ -1,8 +1,9 @@
-#include <iostream>
 #include "menuWindow.h"
+
 #include "game.h"
 #include "keyboard.h"
 #include "log.h"
+#include "settingsManager.h"
 #include "version.h"
 
 MenuWindow::MenuWindow() {}
@@ -34,6 +35,24 @@ bool MenuWindow::Create()
     SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
     QWACK_LOG("Menu Window Finished Initializing.");
+
+    _settingsJson = SettingsManager::Get().getSettings();
+
+    if (_settingsJson.is_discarded())
+    {
+        QWACK_LOG("Failed to parse Settings.json in menu window creation, using defaults.");
+        elements.showCspm = true;
+        elements.showRanks = true;
+        elements.showGoldDiff = true;
+    }
+    else
+    {
+        auto j = _settingsJson["OverlaySettings"];
+
+        elements.showCspm = j.value("ShowCSPM", true);
+        elements.showRanks = j.value("ShowRanks", true);
+        elements.showGoldDiff = j.value("ShowGoldDiff", true);
+    }
 
     visible = true;
     return true;
