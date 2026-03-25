@@ -62,7 +62,8 @@ bool MenuWindow::Create()
     visible = _openOnStart ? true : false;
     if (visible)
     {
-        setVisibility(true);
+        // ! Look into a better way to do this.
+        SDL_ShowWindow(window);
     }
     return true;
 }
@@ -162,6 +163,10 @@ void MenuWindow::showMenu()
 // Private
 void MenuWindow::handleGeneralTab()
 {
+    // Round corners, this is global for all elements created after this line.
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.FrameRounding = 3.0f;
+
     if (ImGui::BeginTabItem("General"))
     {
         ImGui::Spacing();
@@ -262,6 +267,8 @@ void MenuWindow::handleClosing()
 
     ImGuiWindowFlags flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove;
 
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 6.0f);
+
     if (ImGui::BeginPopupModal("Confirm Close", NULL, flags))
     {
         ImGui::Text("Are you sure you want to close?");
@@ -286,4 +293,6 @@ void MenuWindow::handleClosing()
 
         ImGui::EndPopup();
     }
+
+    ImGui::PopStyleVar();
 }
