@@ -160,9 +160,18 @@ void MenuWindow::handleGeneralTab()
         // Overlay toggles
         if (ImGui::CollapsingHeader("Overlays", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::Checkbox("Show CS/min Overlay", &elements.showCspm);
-            ImGui::Checkbox("Show Rank Overlay", &elements.showRanks);
-            ImGui::Checkbox("Show Item Gold Diff Overlay", &elements.showGoldDiff);
+            if (ImGui::Checkbox("Show CS/min Overlay", &elements.showCspm))
+            {
+                SettingsManager::Get().setShowCSPM(elements.showCspm);
+            }
+            if (ImGui::Checkbox("Show Rank Overlay", &elements.showRanks))
+            {
+                SettingsManager::Get().setShowRanks(elements.showRanks);
+            }
+            if (ImGui::Checkbox("Show Item Gold Diff Overlay", &elements.showGoldDiff))
+            {
+                SettingsManager::Get().setShowGoldDiff(elements.showGoldDiff);
+            }
             ImGui::Spacing();
         }
 

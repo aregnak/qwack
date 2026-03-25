@@ -21,6 +21,34 @@ nlohmann::json SettingsManager::getSettings()
     return settingsFile;
 }
 
+void SettingsManager::setOverlaySetting(const char* key, bool state)
+{
+    auto settingsJson = getSettings();
+    settingsJson["OverlaySettings"][key] = state;
+    if (!saveSettings(settingsJson))
+    {
+        WIN_LOG("Failed to save updated overlay settings.");
+    }
+}
+
+void SettingsManager::setShowCSPM(bool state)
+{
+    setOverlaySetting("ShowCSPM", state);
+    //
+}
+
+void SettingsManager::setShowRanks(bool state)
+{
+    setOverlaySetting("ShowRanks", state);
+    //
+}
+
+void SettingsManager::setShowGoldDiff(bool state)
+{
+    setOverlaySetting("ShowGoldDiff", state);
+    //
+}
+
 SettingsManager::SettingsManager()
 {
     handleAppDataFolder();
@@ -81,6 +109,19 @@ nlohmann::json SettingsManager::createSettingsJson()
                                     { "ShowGoldDiff", true } };
 
     return settings;
+}
+
+bool SettingsManager::saveSettings(const nlohmann::json& settings)
+{
+    std::ofstream file(_settingsPath);
+    if (!file.is_open())
+    {
+        WIN_LOG("Failed to open Settings.json for writing.");
+        return false;
+    }
+
+    file << settings.dump(4);
+    return true;
 }
 
 std::string SettingsManager::loadJsonFile(const std::string& path)
