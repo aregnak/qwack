@@ -26,12 +26,12 @@ OverlayWindow::OverlayWindow(float screenWidth, float screenHeight)
         if (i < 5)
         {
             rankPoss[i] =
-                ImVec2(screenWidth / 5.5f, screenHeight / 3.3f + (i * (screenHeight / 13)));
+                ImVec2(screenWidth / 5.5f, screenHeight / 3.15f + (i * (screenHeight / 13.4f)));
         }
         else // Chaos team ranks
         {
-            rankPoss[i] =
-                ImVec2(screenWidth / 1.25f, screenHeight / 3.3f + ((i - 5) * (screenHeight / 13)));
+            rankPoss[i] = ImVec2(screenWidth / 1.25f,
+                                 screenHeight / 3.15f + ((i - 5) * (screenHeight / 13.4f)));
         }
     }
 
@@ -42,7 +42,7 @@ OverlayWindow::OverlayWindow(float screenWidth, float screenHeight)
     for (int i = 0; i < itemPoss.size(); i++)
     {
         itemPoss[i] = ImVec2((screenWidth / 2.0f) - (itemSumSize.x / 2.0f),
-                             screenHeight / 3.3f + (i * (screenHeight / 13)));
+                             screenHeight / 3.3f + (i * (screenHeight / 13.4f)));
     }
 }
 
@@ -91,6 +91,9 @@ void OverlayWindow::renderCspm(float cspm)
     ImGui::SetNextWindowPos(cspmPos, ImGuiCond_Always);
     ImGui::SetNextWindowSize(cspmSize, ImGuiCond_Always);
 
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowRounding = 8.0f;
+
     ImGui::Begin("cspm", nullptr,
                  ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
                      ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing);
@@ -114,10 +117,12 @@ void OverlayWindow::renderRanks(std::vector<std::string> renderRanks)
         ImGui::SetNextWindowBgAlpha(0.4f);
         ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
         ImGui::SetNextWindowSize(rankSize, ImGuiCond_Always);
+
         ImGui::Begin(("RankedWindow##" + std::to_string(num)).c_str(), nullptr,
                      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
                          ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
-                         ImGuiWindowFlags_NoFocusOnAppearing);
+                         ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoScrollbar |
+                         ImGuiWindowFlags_NoScrollWithMouse);
 
         ImGui::Text(renderRanks[num].c_str());
         ImGui::End();
