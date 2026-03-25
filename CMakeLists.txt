@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(qwack VERSION 0.0.5)
+project(qwack VERSION 0.0.6)
 
 # Generate version.h at build time (re-runs git rev-parse on every build)
 add_custom_target(update_version ALL
