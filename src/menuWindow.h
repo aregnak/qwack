@@ -43,4 +43,5 @@ private:
     void handleClosing();
 
     nlohmann::json _settingsJson;
+    bool _openOnStart;
 };

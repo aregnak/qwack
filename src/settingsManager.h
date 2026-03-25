@@ -25,6 +25,8 @@ public:
     void setShowRanks(bool state);
     void setShowGoldDiff(bool state);
 
+    void setOpenOnStart(bool state);
+
 private:
     SettingsManager();
 
@@ -33,6 +35,7 @@ private:
 
     bool saveSettings(const nlohmann::json& settings);
     void setOverlaySetting(const char* key, bool state);
+    void setMenuSetting(const char* key, bool state);
 
     // TODO: make 1 loadJsonFile helper function to be used anywhere.
     std::string loadJsonFile(const std::string& path);

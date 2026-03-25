@@ -12,7 +12,7 @@ bool MenuWindow::Create()
 {
     QWACK_LOG("Initializing Menu Window.");
 
-    window = SDL_CreateWindow("Qwack", 600, 450, 0);
+    window = SDL_CreateWindow("Qwack", 600, 450, SDL_WINDOW_HIDDEN);
 
     if (!window)
     {
@@ -44,6 +44,8 @@ bool MenuWindow::Create()
         elements.showCspm = true;
         elements.showRanks = true;
         elements.showGoldDiff = true;
+
+        _openOnStart = true;
     }
     else
     {
@@ -52,9 +54,16 @@ bool MenuWindow::Create()
         elements.showCspm = j.value("ShowCSPM", true);
         elements.showRanks = j.value("ShowRanks", true);
         elements.showGoldDiff = j.value("ShowGoldDiff", true);
+
+        j = _settingsJson["MenuSettings"];
+        _openOnStart = j.value("OpenOnStart", true);
     }
 
-    visible = true;
+    visible = _openOnStart ? true : false;
+    if (visible)
+    {
+        setVisibility(true);
+    }
     return true;
 }
 
@@ -158,7 +167,7 @@ void MenuWindow::handleGeneralTab()
         ImGui::Spacing();
 
         // Overlay toggles
-        if (ImGui::CollapsingHeader("Overlays", ImGuiTreeNodeFlags_DefaultOpen))
+        if (ImGui::CollapsingHeader("Overlay Settings", ImGuiTreeNodeFlags_DefaultOpen))
         {
             if (ImGui::Checkbox("Show CS/min Overlay", &elements.showCspm))
             {
@@ -172,7 +181,17 @@ void MenuWindow::handleGeneralTab()
             {
                 SettingsManager::Get().setShowGoldDiff(elements.showGoldDiff);
             }
-            ImGui::Spacing();
+        }
+
+        ImGui::Spacing();
+
+        // Menu toggles
+        if (ImGui::CollapsingHeader("Menu Settings"))
+        {
+            if (ImGui::Checkbox("Open this menu when launching Qwack", &_openOnStart))
+            {
+                SettingsManager::Get().setOpenOnStart(_openOnStart);
+            }
         }
 
         ImGui::Spacing();

@@ -21,6 +21,7 @@ nlohmann::json SettingsManager::getSettings()
     return settingsFile;
 }
 
+// Overlay settings
 void SettingsManager::setOverlaySetting(const char* key, bool state)
 {
     auto settingsJson = getSettings();
@@ -46,6 +47,23 @@ void SettingsManager::setShowRanks(bool state)
 void SettingsManager::setShowGoldDiff(bool state)
 {
     setOverlaySetting("ShowGoldDiff", state);
+    //
+}
+
+// Menu settings
+void SettingsManager::setMenuSetting(const char* key, bool state)
+{
+    auto settingsJson = getSettings();
+    settingsJson["MenuSettings"][key] = state;
+    if (!saveSettings(settingsJson))
+    {
+        WIN_LOG("Failed to save updated menu settings.");
+    }
+}
+
+void SettingsManager::setOpenOnStart(bool state)
+{
+    setMenuSetting("OpenOnStart", state);
     //
 }
 
@@ -100,6 +118,7 @@ void SettingsManager::handleAppDataFolder()
 }
 
 // Settings.json template
+// TODO: Add close settings on startup setting
 nlohmann::json SettingsManager::createSettingsJson()
 {
     nlohmann::json settings;
@@ -107,6 +126,8 @@ nlohmann::json SettingsManager::createSettingsJson()
     settings["OverlaySettings"] = { { "ShowCSPM", true },
                                     { "ShowRanks", true },
                                     { "ShowGoldDiff", true } };
+
+    settings["MenuSettings"] = { { "OpenOnStart", true } };
 
     return settings;
 }
