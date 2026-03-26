@@ -272,6 +272,7 @@ void GamePoller::getAndSortSessionPlayers(LCUClient& lcuC, std::atomic<GameMode>
     }
 }
 
+// This is less accurate for jungle camps especially early game.
 void GamePoller::getCSPM(std::atomic<float>& csPerMin, int currentCS, float time, float gold)
 {
     if (time >= 30.0f)
@@ -279,7 +280,7 @@ void GamePoller::getCSPM(std::atomic<float>& csPerMin, int currentCS, float time
         // CS counter updates every 10 CS, this algorithm will help estimate through gold delta.
         if (_lastCS == currentCS)
         {
-            if (gold - _lastGold > 14.0f)
+            if (gold - _lastGold > 14.0f && gold - _lastGold <= 90)
             {
                 _estimatedCS++;
             }
