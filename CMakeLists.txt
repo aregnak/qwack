@@ -38,6 +38,7 @@ endif()
 # Find library packages 
 find_package(OpenSSL REQUIRED)
 find_package(SDL3 CONFIG REQUIRED)
+find_package(SDL3_image CONFIG REQUIRED)
 
 
 add_executable(qwack
@@ -86,6 +87,7 @@ target_link_libraries(qwack PRIVATE
     d3d11
     dxgi
     SDL3::SDL3
+    SDL3_image::SDL3_image
     OpenSSL::SSL
     OpenSSL::Crypto
 )
