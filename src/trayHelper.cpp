@@ -1,12 +1,20 @@
 #include "trayHelper.h"
 
+#include <SDL3_image/SDL_image.h>
+
 #include "log.h"
 #include "menuWindow.h"
 
 TrayHelper::TrayHelper(MenuWindow& menu)
     : _menu(menu)
 {
-    tray = SDL_CreateTray(NULL, "Qwack");
+    trayIconSurface = loadTrayIcon();
+    tray = SDL_CreateTray(trayIconSurface, "Qwack");
+    if (!tray)
+    {
+        QWACK_LOG("SDL_CreateTray failed: " << SDL_GetError());
+        return;
+    }
 
     // Create a context menu for the tray.
     tmenu = SDL_CreateTrayMenu(tray);
@@ -24,6 +32,25 @@ TrayHelper::~TrayHelper()
 {
     SDL_DestroyTray(tray);
     //
+}
+
+SDL_Surface* TrayHelper::loadTrayIcon()
+{
+    SDL_IOStream* io = SDL_IOFromConstMem(qwack_ico, qwack_ico_len);
+    if (!io)
+    {
+        QWACK_LOG("SDL_IOFromConstMem failed: " << SDL_GetError());
+        return nullptr;
+    }
+
+    SDL_Surface* surface = IMG_Load_IO(io, 1);
+    if (!surface)
+    {
+        QWACK_LOG("IMG_Load_IO failed: " << SDL_GetError());
+        return nullptr;
+    }
+
+    return surface;
 }
 
 void TrayHelper::callback_open(void* userdata, SDL_TrayEntry* invoker)
