@@ -4,7 +4,7 @@
 
 nlohmann::json SettingsManager::getSettings()
 {
-    auto body = loadJsonFile(_settingsPath);
+    auto body = Util::loadJsonFile(_settingsPath);
     if (body.empty())
     {
         LCU_LOG("JSON file is empty or missing.");
@@ -143,12 +143,4 @@ bool SettingsManager::saveSettings(const nlohmann::json& settings)
 
     file << settings.dump(4);
     return true;
-}
-
-std::string SettingsManager::loadJsonFile(const std::string& path)
-{
-    std::ifstream f(path);
-    std::stringstream ss;
-    ss << f.rdbuf();
-    return ss.str();
 }

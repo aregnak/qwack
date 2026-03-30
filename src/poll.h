@@ -10,6 +10,7 @@
 #include "game.h"
 #include "lcuClient.h"
 #include "playerInfo.h"
+#include "util.h"
 
 class poll
 {
@@ -35,7 +36,6 @@ public:
     // Helper functions
     int getItemPrice(std::string);
     std::string getChampionNameById(int);
-    std::string loadJsonFile(const std::string&);
 
     // void getPlayerGameInfo(StaticPlayer&);
 

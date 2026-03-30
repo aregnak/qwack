@@ -25,7 +25,7 @@ poll::poll()
 bool poll::update()
 {
 #if DEBUG_ENABLED
-    auto body = loadJsonFile("./allgamedata2.json");
+    auto body = Util::loadJsonFile("./allgamedata2.json");
     if (body.empty())
     {
         LCU_LOG("JSON file is empty or missing.");
@@ -91,7 +91,7 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
 void poll::getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode)
 {
 #if DEBUG_ENABLED
-    auto body = loadJsonFile("./session2.json");
+    auto body = Util::loadJsonFile("./session2.json");
     auto session = json::parse(body, nullptr, false);
 
 #else
@@ -139,7 +139,7 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
                           std::atomic<GameMode>& gameMode)
 {
 #if DEBUG_ENABLED
-    auto body = loadJsonFile("./session2.json");
+    auto body = Util::loadJsonFile("./session2.json");
     auto session = json::parse(body, nullptr, false);
 
 #else
@@ -313,15 +313,6 @@ std::string poll::getChampionNameById(int id)
     }
 
     return "UnknownChampion";
-}
-
-// Helper function used for static testing.
-std::string poll::loadJsonFile(const std::string& path)
-{
-    std::ifstream f(path);
-    std::stringstream ss;
-    ss << f.rdbuf();
-    return ss.str();
 }
 
 // Private

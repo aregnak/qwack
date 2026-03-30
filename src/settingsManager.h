@@ -6,6 +6,7 @@
 
 #include "json.hpp"
 #include "log.h"
+#include "util.h"
 
 class SettingsManager
 {
@@ -36,9 +37,6 @@ private:
     bool saveSettings(const nlohmann::json& settings);
     void setOverlaySetting(const char* key, bool state);
     void setMenuSetting(const char* key, bool state);
-
-    // TODO: make 1 loadJsonFile helper function to be used anywhere.
-    std::string loadJsonFile(const std::string& path);
 
     std::string _settingsPath;
 };
