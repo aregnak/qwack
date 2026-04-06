@@ -118,7 +118,6 @@ void SettingsManager::handleAppDataFolder()
 }
 
 // Settings.json template
-// TODO: Add close settings on startup setting
 nlohmann::json SettingsManager::createSettingsJson()
 {
     nlohmann::json settings;
