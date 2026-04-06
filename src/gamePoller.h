@@ -59,7 +59,7 @@ private:
 
     std::string _playerName;
 
-    poll _poller;
+    Poll _poller;
     std::vector<PlayerInfo> _players;
     std::vector<std::string> _ranks;
 

@@ -11,7 +11,7 @@ using json = nlohmann::json;
 // TODO: Create a better way to conduct static tests.
 #define DEBUG_ENABLED false
 
-poll::poll()
+Poll::Poll()
     : cli("127.0.0.1", 2999)
 {
     cli.enable_server_certificate_verification(false);
@@ -22,7 +22,7 @@ poll::poll()
     getItemList();
 }
 
-bool poll::update()
+bool Poll::update()
 {
 #if DEBUG_ENABLED
     auto body = Util::loadJsonFile("./allgamedata2.json");
@@ -61,7 +61,7 @@ bool poll::update()
     return true;
 }
 
-std::string poll::getCurrentSummoner(LCUClient& lcu)
+std::string Poll::getCurrentSummoner(LCUClient& lcu)
 {
     auto nres = lcu.get("/lol-summoner/v1/current-summoner");
 
@@ -88,7 +88,7 @@ std::string poll::getCurrentSummoner(LCUClient& lcu)
     return nstream.str();
 }
 
-void poll::getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode)
+void Poll::getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode)
 {
 #if DEBUG_ENABLED
     auto body = Util::loadJsonFile("./session2.json");
@@ -146,7 +146,7 @@ void poll::getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode)
     }
 }
 
-void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
+void Poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
                           std::atomic<GameMode>& gameMode)
 {
 #if DEBUG_ENABLED
@@ -194,7 +194,7 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
     }
 }
 
-std::string poll::getPlayerName(LCUClient& lcu, const std::string puuid)
+std::string Poll::getPlayerName(LCUClient& lcu, const std::string puuid)
 {
     auto nres = lcu.get("/lol-summoner/v2/summoners/puuid/" + puuid);
 
@@ -221,7 +221,7 @@ std::string poll::getPlayerName(LCUClient& lcu, const std::string puuid)
     return nstream.str();
 }
 
-std::string poll::getPlayerRank(LCUClient& lcu, const std::string puuid)
+std::string Poll::getPlayerRank(LCUClient& lcu, const std::string puuid)
 {
     auto nres = lcu.get("/lol-ranked/v1/ranked-stats/" + puuid);
 
@@ -251,7 +251,7 @@ std::string poll::getPlayerRank(LCUClient& lcu, const std::string puuid)
     return "";
 }
 
-void poll::getPlayerRoleAndTeam(PlayerInfo& player)
+void Poll::getPlayerRoleAndTeam(PlayerInfo& player)
 {
     for (const auto& j : gameDataCache["allPlayers"])
     {
@@ -266,7 +266,7 @@ void poll::getPlayerRoleAndTeam(PlayerInfo& player)
     }
 }
 
-std::vector<int> poll::getPlayerItemIDs(PlayerInfo& player)
+std::vector<int> Poll::getPlayerItemIDs(PlayerInfo& player)
 {
     std::vector<int> itemIDs;
 
@@ -284,7 +284,7 @@ std::vector<int> poll::getPlayerItemIDs(PlayerInfo& player)
     }
 }
 
-int poll::getcs(const std::string& playerName)
+int Poll::getcs(const std::string& playerName)
 {
     int cs = 0;
     for (const auto& p : gameDataCache["allPlayers"])
@@ -299,20 +299,20 @@ int poll::getcs(const std::string& playerName)
     return cs;
 }
 
-float poll::getGameTime()
+float Poll::getGameTime()
 {
     return gameDataCache["gameData"]["gameTime"];
     //
 }
 
-float poll::getGold()
+float Poll::getGold()
 {
     return gameDataCache["activePlayer"]["currentGold"];
     //
 }
 
 // Helper functions
-int poll::getItemPrice(std::string itemID)
+int Poll::getItemPrice(std::string itemID)
 {
     if (itemDataCache["data"].contains(itemID))
     {
@@ -322,7 +322,7 @@ int poll::getItemPrice(std::string itemID)
     return 0;
 }
 
-std::string poll::getChampionNameById(int id)
+std::string Poll::getChampionNameById(int id)
 {
     std::string idstr = std::to_string(id);
 
@@ -338,7 +338,7 @@ std::string poll::getChampionNameById(int id)
 }
 
 // Private
-void poll::getGameVersion()
+void Poll::getGameVersion()
 {
     httplib::Client cli("https://ddragon.leagueoflegends.com");
 
@@ -358,7 +358,7 @@ void poll::getGameVersion()
     gameVersion = versions[0];
 }
 
-void poll::getChampionList()
+void Poll::getChampionList()
 {
     httplib::Client cli("https://ddragon.leagueoflegends.com");
 
@@ -381,7 +381,7 @@ void poll::getChampionList()
     }
 }
 
-void poll::getItemList()
+void Poll::getItemList()
 {
     httplib::Client cli("https://ddragon.leagueoflegends.com");
 

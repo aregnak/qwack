@@ -12,10 +12,10 @@
 #include "playerInfo.h"
 #include "util.h"
 
-class poll
+class Poll
 {
 public:
-    poll();
+    Poll();
 
     bool update(); // Live Client Data API
 

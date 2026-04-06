@@ -1,6 +1,7 @@
 #include "settingsManager.h"
 
-#include <sstream>
+#include <codecvt>
+#include <locale>
 
 nlohmann::json SettingsManager::getSettings()
 {
@@ -81,7 +82,8 @@ void SettingsManager::handleAppDataFolder()
         std::wstring wpath(path);
         CoTaskMemFree(path);
 
-        std::string folder(wpath.begin(), wpath.end());
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+        std::string folder = converter.to_bytes(wpath);
         folder += "\\Qwack\\";
 
         std::filesystem::path qwackPath(folder);
