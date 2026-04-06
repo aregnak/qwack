@@ -96,9 +96,20 @@ void poll::getGameMode(LCUClient& lcu, std::atomic<GameMode>& gameMode)
 
 #else
     auto res = lcu.get("/lol-gameflow/v1/session");
+
+    if (!res || res->status != 200)
+    {
+        return;
+    }
+
     auto session = json::parse(res->body);
 
 #endif // DEBUG_ENABLED
+
+    if (session.is_discarded())
+    {
+        return;
+    }
 
     // If you watch a replay, the game mode will display as that of the actual game, not a different
     // one specifying spectator mode. However, the active player entry will have an error instead.
@@ -144,9 +155,20 @@ void poll::getSessionInfo(LCUClient& lcu, std::vector<PlayerInfo>& players,
 
 #else
     auto res = lcu.get("/lol-gameflow/v1/session");
+
+    if (!res || res->status != 200)
+    {
+        return;
+    }
+
     auto session = json::parse(res->body);
 
 #endif // DEBUG_ENABLED
+
+    if (session.is_discarded())
+    {
+        return;
+    }
 
     if (gameMode.load() != GameMode::PRACTICETOOL)
     {
