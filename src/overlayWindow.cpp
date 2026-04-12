@@ -1,8 +1,7 @@
-#include <iostream>
-#include <string>
 #include "overlayWindow.h"
 #include "log.h"
 #include "game.h"
+#include "util.h"
 
 OverlayWindow::OverlayWindow(float screenWidth, float screenHeight)
     : _screenWidth(screenWidth)
@@ -151,7 +150,7 @@ void OverlayWindow::renderGoldDiff(std::vector<int> itemGoldDiff)
 
 bool OverlayWindow::handleWindowVisibility(leagueState gs)
 {
-    if (gs == leagueState::INGAME && isLeagueFocused())
+    if (gs == leagueState::INGAME && Util::isLeagueFocused())
     {
         setVisibility(true);
     }
